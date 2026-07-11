@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>On Air Chelles — Training Log</title>
+<meta name="theme-color" content="#080809">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="On Air Training">
+<meta name="description" content="Training Log — On Air Chelles">
+<link id="pwa-manifest" rel="manifest">
+<script>
+// ═══ PWA MANIFEST ═══
+(function(){
+  var manifest={
+    name:'On Air Chelles — Training Log',
+    short_name:'On Air',
+    description:'Suivi d\'entraînement — On Air Chelles',
+    start_url:'.',
+    display:'standalone',
+    background_color:'#080809',
+    theme_color:'#080809',
+    orientation:'portrait',
+    icons:[
+      {src:generateIcon(192),sizes:'192x192',type:'image/png',purpose:'any maskable'},
+      {src:generateIcon(512),sizes:'512x512',type:'image/png',purpose:'any maskable'}
+    ]
+  };
+  function generateIcon(size){
+    var c=document.createElement('canvas');c.width=size;c.height=size;
+    var ctx=c.getContext('2d');
+    var r=size*0.18;
+    ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(size-r,0);
+    ctx.quadraticCurveTo(size,0,size,r);ctx.lineTo(size,size-r);
+    ctx.quadraticCurveTo(size,size,size-r,size);ctx.lineTo(r,size);
+    ctx.quadraticCurveTo(0,size,0,size-r);ctx.lineTo(0,r);
+    ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();
+    ctx.fillStyle='#080809';ctx.fill();
+    // Logo OA
+    ctx.fillStyle='#4ade80';
+    ctx.font='bold '+(size*0.32)+'px system-ui';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('OA',size/2,size*0.42);
+    ctx.fillStyle='#3f3f46';
+    ctx.font=(size*0.13)+'px system-ui';
+    ctx.fillText('TRAINING',size/2,size*0.68);
+    return c.toDataURL('image/png');
+  }
+  // Set manifest via blob
+  var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  document.getElementById('pwa-manifest').href=URL.createObjectURL(blob);
+
+  // ═══ SERVICE WORKER ═══
+  if('serviceWorker' in navigator){
+    var swCode=`
+const CACHE='onair-v1';
+const ASSETS=[self.location.href.split('?')[0]];
+self.addEventListener('install',function(e){
+  e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS);}));
+  self.skipWaiting();
+});
+self.addEventListener('activate',function(e){
+  e.waitUntil(caches.keys().then(function(keys){
+    return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));
+  }));
+  self.clients.claim();
+});
+self.addEventListener('fetch',function(e){
+  e.respondWith(caches.match(e.request).then(function(r){
+    return r||fetch(e.request).then(function(resp){
+      if(resp&&resp.status===200){
+        var clone=resp.clone();
+        caches.open(CACHE).then(function(c){c.put(e.request,clone);});
+      }
+      return resp;
+    }).catch(function(){return caches.match(e.request);});
+  }));
+});
+`;
+    var swBlob=new Blob([swCode],{type:'application/javascript'});
+    var swUrl=URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl,{scope:'./'}).then(function(reg){
+      console.log('SW registered',reg.scope);
+    }).catch(function(e){console.log('SW error',e);});
+  }
+})();
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#080809;color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding-bottom:66px;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:0;}
+input,textarea,button{font-family:inherit;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:#2a2a2e;border-radius:2px;}
+.header{position:sticky;top:0;z-index:10;border-bottom:1px solid #1a1a1d;background:rgba(8,8,9,0.97);backdrop-filter:blur(20px);padding:9px 14px;}
+.header-inner{max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
+.app-title{font-size:15px;font-weight:700;color:#f4f4f5;line-height:1.2;letter-spacing:-0.01em;}
+.app-sub{font-size:9px;font-family:monospace;color:#2a2a2e;text-transform:uppercase;letter-spacing:0.12em;}
+.content{max-width:600px;margin:0 auto;padding:12px 14px;}
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:20;border-top:1px solid #1a1a1d;background:rgba(8,8,9,0.98);backdrop-filter:blur(20px);}
+.nav-inner{max-width:600px;margin:0 auto;display:flex;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;gap:2px;border:none;background:transparent;cursor:pointer;color:#3f3f46;transition:color 0.12s;font-family:inherit;}
+.nav-btn.active{color:#f4f4f5;}
+.nav-icon{font-size:15px;line-height:1;}
+.nav-label{font-size:8px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
+.nav-dot{width:12px;height:2px;border-radius:999px;margin-top:1px;}
+.card{border-radius:11px;border:1px solid #1a1a1d;background:#0d0d0f;overflow:hidden;margin-bottom:6px;}
+.card-pad{padding:12px;}
+.section-label{font-size:9px;color:#3f3f46;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+.pill{display:inline-flex;align-items:center;padding:1px 6px;border-radius:999px;font-size:8px;font-weight:700;border:1px solid;}
+.mono{font-family:monospace;font-weight:700;}
+.btn{border:none;cursor:pointer;font-family:inherit;}
+.btn-primary{width:100%;padding:13px;border-radius:11px;font-weight:700;font-size:13px;color:#000;}
+.btn-outline{padding:4px 8px;border-radius:6px;border:1px solid #2a2a2e;background:transparent;color:#52525b;font-size:11px;}
+.set-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #141416;}
+.set-row:last-child{border-bottom:none;}
+.set-input-wrap{display:flex;align-items:center;gap:3px;flex:1;background:#111113;border-radius:8px;padding:5px 8px;}
+.set-input{flex:1;background:transparent;border:none;outline:none;font-size:14px;font-family:monospace;font-weight:700;text-align:center;min-width:0;}
+.set-check{width:28px;height:28px;border-radius:8px;border:2px solid #2a2a2e;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;}
+.tag-tab{flex:1;padding:8px 2px;border-radius:10px;border:1px solid #1a1a1d;background:transparent;cursor:pointer;text-align:center;font-family:inherit;}
+.opt-tab{flex:1;padding:6px;border-radius:9px;border:1px solid #1a1a1d;background:transparent;cursor:pointer;text-align:left;font-family:inherit;}
+.ex-card{border-radius:10px;border:1px solid #1a1a1d;background:#0d0d0f;overflow:hidden;margin-bottom:4px;}
+.ex-header{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;}
+.ex-body{border-top:1px solid #1a1a1d;padding:8px 12px;}
+.detail-row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:#111113;margin-bottom:3px;}
+.progress-bar{width:100%;height:2px;background:#1a1a1d;border-radius:999px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:999px;transition:width 0.4s;}
+.timer-wrap{display:flex;align-items:center;gap:6px;}
+.timer-btn{width:26px;height:26px;border-radius:7px;border:1px solid #2a2a2e;background:#18181b;color:#71717a;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.timer-inner{display:flex;align-items:center;gap:7px;flex:1;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid #2a2a2e;background:#111113;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.stat-card{border-radius:11px;border:1px solid #1a1a1d;background:#0d0d0f;padding:12px 8px;text-align:center;}
+.week-grid{display:flex;gap:5px;}
+.week-cell{flex:1;border-radius:9px;padding:7px 3px;text-align:center;border:1px solid #1a1a1d;background:transparent;}
+.flex{display:flex;}
+.flex-col{display:flex;flex-direction:column;}
+.gap4{gap:4px;}
+.gap6{gap:6px;}
+.gap8{gap:8px;}
+.gap10{gap:10px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-cell{border-radius:8px;min-height:48px;padding:4px;cursor:default;}
+.guide-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.guide-tab{flex:1;padding:7px;border-radius:9px;border:1px solid #1a1a1d;background:transparent;cursor:pointer;font-size:10px;font-weight:600;color:#52525b;font-family:inherit;}
+.guide-tab.active{border-color:#3f3f46;background:rgba(63,63,70,0.3);color:#f4f4f5;}
+.feu-card{border-radius:10px;padding:12px;margin-bottom:7px;}
+.cmd-card{border-radius:10px;border-left:3px solid #fbbf24;background:#0d0d0f;padding:12px;margin-bottom:7px;}
+.vol-bar{display:flex;gap:2px;height:8px;}
+.vol-seg{height:100%;border-radius:2px;min-width:3px;opacity:0.85;}
+.search-input{width:100%;background:#0d0d0f;border:1px solid #1e1e22;border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;color:#f4f4f5;outline:none;}
+.sess-header{position:sticky;top:0;z-index:20;background:rgba(8,8,9,0.97);backdrop-filter:blur(16px);border-bottom:1px solid #1a1a1d;padding:10px 14px;}
+.sess-ex{border-radius:12px;overflow:hidden;margin-bottom:6px;}
+.ramp-mini{display:flex;gap:3px;margin-bottom:6px;}
+.ramp-cell{flex:1;padding:4px;border-radius:5px;background:rgba(251,191,36,0.07);text-align:center;}
+.detail-toggle{background:none;border:none;color:#3f3f46;font-size:10px;cursor:pointer;text-align:left;padding:0;font-family:inherit;}
+.hidden{display:none;}
+textarea{width:100%;background:transparent;border:1px solid #1e1e22;border-radius:6px;padding:5px 7px;font-size:10px;color:#71717a;outline:none;resize:none;font-family:inherit;}
+.hist-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;}
+.hist-sheet{background:#111113;border-radius:18px 18px 0 0;border:1px solid #2a2a2e;border-bottom:none;padding:16px 16px 28px;width:100%;max-width:600px;}
+.hist-handle{width:36px;height:3px;border-radius:999px;background:#2a2a2e;margin:0 auto 14px;}
+</style>
+</head>
+<body>
+
+<!-- PWA Install Banner -->
+<div id="pwa-install-banner" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(74,222,128,0.08);border-bottom:1px solid rgba(74,222,128,0.2);max-width:600px;margin:0 auto">
+  <span style="font-size:18px">📲</span>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:11px;font-weight:700;color:#4ade80">Installer l'app</div>
+    <div style="font-size:9px;color:#52525b">Accès direct depuis l'écran d'accueil</div>
+  </div>
+  <button onclick="triggerInstall()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(74,222,128,0.35);background:rgba(74,222,128,0.12);color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">Installer</button>
+  <button onclick="document.getElementById('pwa-install-banner').style.display='none'" style="background:none;border:none;color:#3f3f46;font-size:14px;cursor:pointer;padding:0;flex-shrink:0">✕</button>
+</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="app-sub">On Air Chelles</div>
+      <div class="app-title">Training Log</div>
+    </div>
+    <div id="sess-count" style="font-size:9px;font-family:monospace;color:#3f3f46;">0 séances</div>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-tab="dash" onclick="switchTab('dash')">
+      <span class="nav-icon">⊞</span>
+      <span class="nav-label">Accueil</span>
+      <div class="nav-dot" id="dot-dash" style="background:#4ade80;"></div>
+    </button>
+    <button class="nav-btn" data-tab="prog" onclick="switchTab('prog')">
+      <span class="nav-icon">◈</span>
+      <span class="nav-label">Programme</span>
+      <div class="nav-dot hidden" id="dot-prog" style="background:#60a5fa;"></div>
+    </button>
+    <button class="nav-btn" data-tab="hist" onclick="switchTab('hist')">
+      <span class="nav-icon">≡</span>
+      <span class="nav-label">Historique</span>
+      <div class="nav-dot hidden" id="dot-hist" style="background:#fb923c;"></div>
+    </button>
+    <button class="nav-btn" data-tab="stats" onclick="switchTab('stats')">
+      <span class="nav-icon">◎</span>
+      <span class="nav-label">Stats</span>
+      <div class="nav-dot hidden" id="dot-stats" style="background:#c084fc;"></div>
+    </button>
+    <button class="nav-btn" data-tab="params" onclick="switchTab('params')">
+      <span class="nav-icon">⚙</span>
+      <span class="nav-label">Réglages</span>
+      <div class="nav-dot hidden" id="dot-params" style="background:#71717a;"></div>
+    </button>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══
+var DB = [];
+var currentTab = 'dash';
+var activeSession = null;
+var viewingSession = null;
+var progDay = 'lundi';
+var progOptIdx = {lundi:0,mercredi:0,vendredi:0,samedi:0};
+var dashDay = 'lundi';
+var dashOptIdx = 0;
+var calYear = new Date().getFullYear();
+var calMonth = new Date().getMonth();
+var exOpen = {};
+var sessExOpen = {};
+var sessExDetail = {};
+var sessData = {};
+var sessOrder = [];
+var sessTimer = null;
+var sessStart = null;
+var sessElapsed = 0;
+var sessMemo = '';
+var activeTimers = {};
+var guideTab = 'cmd';
+var searchQ = '';
+var searchFilt = 'all';
+var confirmDel = null;
+var statsExId = null;
+var sessPRs = {};
+var deloadMode = false; // Mode deload — charges à 60%, timer désactivé
+
+function getRecordPoids(exId){
+  // Retourne le poids max historique pour cet exercice (hors session en cours)
+  var max=0;
+  DB.forEach(function(s){
+    var ex=s.exercises&&s.exercises.find(function(e){return e.id===exId;});
+    if(!ex||!ex.data||!ex.data.sets)return;
+    ex.data.sets.forEach(function(st){
+      if(st.done&&st.type!=='R'&&st.poids){var p=parseFloat(st.poids)||0;if(p>max)max=p;}
+    });
+  });
+  return max;
+}
+
+// ═══ STORAGE ═══
+async function loadDB() {
+  try {
+    var r = localStorage.getItem('onair_hevy_v1');
+    var parsed = r ? JSON.parse(r) : [];
+    DB = Array.isArray(parsed) ? parsed : [];
+  } catch(e) {
+    DB = [];
+    console.error('Données locales corrompues, réinitialisation:', e);
+  }
+  render();
+}
+async function saveDB() {
+  try { localStorage.setItem('onair_hevy_v1', JSON.stringify(DB)); } catch(e) {}
+}
+
+// ═══ DATA ═══
+var BADGE_COLORS = {
+  FORCE:  {bg:'rgba(239,68,68,0.15)',  color:'#f87171', border:'rgba(239,68,68,0.3)'},
+  ASYM:   {bg:'rgba(168,85,247,0.15)', color:'#c084fc', border:'rgba(168,85,247,0.3)'},
+  SS:     {bg:'rgba(251,146,60,0.15)', color:'#fb923c', border:'rgba(251,146,60,0.3)'},
+  ABS:    {bg:'rgba(6,182,212,0.15)',  color:'#67e8f9', border:'rgba(6,182,212,0.3)'},
+  FIN:    {bg:'rgba(234,179,8,0.15)',  color:'#fbbf24', border:'rgba(234,179,8,0.3)'}
+};
+var TAG_COLORS = {PULL:'#4ade80',PUSH:'#f87171',LOWER:'#facc15',UPPER:'#60a5fa'};
+
+var SEANCES = [
+  {id:'lundi',tag:'PULL',jour:'LUN',couleur:'#4ade80',focus:'Dos · Biceps',options:[
+    {key:'A',label:'A',color:'#4ade80',exercices:[
+      {id:'pa1',nom:'Rowing Unilatéral',machine:'Hammer ISO-Lateral Row',series:3,repsTarget:'6-8',reposSec:180,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · Gauche en premier',badge:'FORCE'},
+      {id:'pa2',nom:'Tirage Vertical Prise Large',machine:'Gym80 4116 LAT PULL STATION',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · Épaules basses'},
+      {id:'pa3',nom:'Rowing Câble Bas MAG Grip',machine:'Gym80 4016 — poulie basse',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Écraser les omoplates 2s'},
+      {id:'pa4',nom:'Face Pull',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Coudes très ouverts'},
+      {id:'pa5',nom:'Curl Biceps Iso-Lat',machine:'Hammer Seated Biceps',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE · supination',badge:'ASYM'},
+      {id:'pa6',nom:'Curl Marteau',machine:'Haltères',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'SANGLES INTERDITES'},
+      {id:'pa7',nom:'Hyperextensions',machine:'Station 45°',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-2-0',isForce:false,notes:'Regard au sol'}
+    ]},
+    {key:'B',label:'B',color:'#a78bfa',exercices:[
+      {id:'pb1',nom:'Rowing Barre Libre',machine:'Rack Eleiko',series:3,repsTarget:'5-7',reposSec:180,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · cou mobile obligatoire',badge:'FORCE'},
+      {id:'pb2',nom:'Tirage Vertical Prise Large',machine:'Gym80 4116',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · Épaules basses'},
+      {id:'pb3',nom:'Rowing Câble Bas MAG Grip',machine:'Gym80 4016 — poulie basse',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Écraser les omoplates 2s'},
+      {id:'pb4',nom:'Hammer Row Volume',machine:'Hammer ISO-Lateral Row',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Gauche en premier'},
+      {id:'pb5',nom:'Face Pull',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Coudes très ouverts'},
+      {id:'pb6',nom:'Curl Marteau Câble',machine:'Gym80 4012 — poulie basse',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'SANGLES INTERDITES'},
+      {id:'pb7',nom:'Hyperextensions',machine:'Station 45°',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-2-0',isForce:false,notes:'Regard au sol'}
+    ]},
+    {key:'C',label:'C',color:'#fbbf24',exercices:[
+      {id:'pc1',nom:'Rowing Unilatéral',machine:'Hammer ISO-Lateral Row',series:3,repsTarget:'6-8',reposSec:180,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · Gauche en premier',badge:'FORCE'},
+      {id:'pc2',nom:'Tirage Vertical Prise Large',machine:'Gym80 4116',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · Épaules basses'},
+      {id:'pc3',nom:'Rowing Câble Bas MAG Grip',machine:'Gym80 4016 — poulie basse',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Écraser les omoplates 2s'},
+      {id:'pc4',nom:'Curl Biceps SOLO bras frais',machine:'Hammer Seated Biceps',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE · avant superset',badge:'ASYM'},
+      {id:'pc5',nom:'Face Pull ⚡ → Curl Marteau',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'15',reposSec:0,tempo:'2-0-1-2',isForce:false,notes:'Enchaîner avec Curl Marteau',badge:'SS'},
+      {id:'pc6',nom:'Curl Marteau Câble ⚡',machine:'Gym80 4012 — poulie basse',series:3,repsTarget:'10-12',reposSec:75,tempo:'3-0-1-1',isForce:false,notes:'75s repos après ce bloc',badge:'SS'},
+      {id:'pc7',nom:'Hyperextensions',machine:'Station 45°',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-2-0',isForce:false,notes:'Regard au sol'}
+    ]}
+  ]},
+  {id:'mercredi',tag:'PUSH',jour:'MER',couleur:'#f87171',focus:'Pecs · Épaules · Triceps',options:[
+    {key:'A',label:'A',color:'#f87171',exercices:[
+      {id:'pua1',nom:'Développé Couché Barre',machine:'Banc + Eleiko',series:3,repsTarget:'5-7',reposSec:180,tempo:'3-0-1-0',isForce:true,notes:'RAMPING · coude droit soigné',badge:'FORCE'},
+      {id:'pua2',nom:'Développé Incliné Dual 30°',machine:'Gym80 4365',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-0',isForce:false,notes:'LOI DU GAUCHE · 30° max'},
+      {id:'pua3',nom:'Développé Épaules Dual',machine:'Gym80 4363',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Dos plaqué · LOI DU GAUCHE'},
+      {id:'pua4',nom:'Écarté Câble Art',machine:'Gym80 5103',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s'},
+      {id:'pua5',nom:'Élévations Latérales Câble',machine:'Gym80 4012 — poulie basse',series:4,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Gauche en premier · 4 séries V-Shape'},
+      {id:'pua6',nom:'Extension Triceps Poulie',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'Coudes collés · corde si coude siffle'},
+      {id:'pua7',nom:'Relevés de Jambes',machine:'Gym80 4170 Tour',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Enrouler le bassin vers le haut',badge:'ABS'}
+    ]},
+    {key:'B',label:'B',color:'#fb923c',exercices:[
+      {id:'pub1',nom:'Développé Couché Guidé Dual',machine:'Gym80 4364',series:3,repsTarget:'6-8',reposSec:180,tempo:'3-0-1-0',isForce:true,notes:'RAMPING · rotation libre · LOI DU GAUCHE',badge:'FORCE'},
+      {id:'pub2',nom:'Développé Incliné Dual 30°',machine:'Gym80 4365',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-0',isForce:false,notes:'LOI DU GAUCHE · 30° max'},
+      {id:'pub3',nom:'Développé Épaules Dual',machine:'Gym80 4363',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Dos plaqué · LOI DU GAUCHE'},
+      {id:'pub4',nom:'Écarté Câble Art',machine:'Gym80 5103',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s'},
+      {id:'pub5',nom:'Élévations Latérales Câble',machine:'Gym80 4012 — poulie basse',series:4,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Gauche en premier'},
+      {id:'pub6',nom:'Extension Triceps Machine',machine:'Gym80 3011',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Zéro contrainte coude droit'},
+      {id:'pub7',nom:'Relevés de Jambes',machine:'Gym80 4170 Tour',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Enrouler le bassin',badge:'ABS'}
+    ]},
+    {key:'C',label:'C',color:'#fbbf24',exercices:[
+      {id:'puc1',nom:'Développé Couché Barre',machine:'Banc + Eleiko',series:3,repsTarget:'5-7',reposSec:180,tempo:'3-0-1-0',isForce:true,notes:'RAMPING · coude droit soigné',badge:'FORCE'},
+      {id:'puc2',nom:'Développé Incliné Dual 30°',machine:'Gym80 4365',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-0',isForce:false,notes:'LOI DU GAUCHE · 30° max'},
+      {id:'puc3',nom:'Développé Épaules Dual',machine:'Gym80 4363',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Dos plaqué · LOI DU GAUCHE'},
+      {id:'puc4',nom:'Écarté Câble Art',machine:'Gym80 5103',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s'},
+      {id:'puc5',nom:'Latérales ⚡ → Extension',machine:'Gym80 4012 — poulie basse',series:4,repsTarget:'12-15',reposSec:0,tempo:'2-0-1-1',isForce:false,notes:'Enchaîner avec Extension Triceps',badge:'SS'},
+      {id:'puc6',nom:'Extension Triceps ⚡',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'60s repos après ce bloc',badge:'SS'},
+      {id:'puc7',nom:'Relevés de Jambes',machine:'Gym80 4170 Tour',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Enrouler le bassin',badge:'ABS'}
+    ]}
+  ]},
+  {id:'vendredi',tag:'LOWER',jour:'VEN',couleur:'#facc15',focus:'Cuisses · Mollets · Abdos',options:[
+    {key:'A',label:'A',color:'#4ade80',exercices:[
+      {id:'la1',nom:'Leg Curl Assis',machine:'Gym80 3003',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'En premier — lubrifie les genoux'},
+      {id:'la2',nom:'Pendulum Squat',machine:'Gym80 4353',series:3,repsTarget:'6-8',reposSec:180,tempo:'4-0-1-1',isForce:true,notes:'RAMPING · descente 4s obligatoire',badge:'FORCE'},
+      {id:'la3',nom:'RDL Haltères',machine:'Haltères 60kg',series:3,repsTarget:'10-12',reposSec:120,tempo:'3-0-1-0',isForce:false,notes:'SANGLES · dos plat strict'},
+      {id:'la4',nom:'Presse à Cuisses',machine:'Gym80 3030',series:3,repsTarget:'12-15',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Pieds largeur de bassin'},
+      {id:'la5',nom:'Leg Extension',machine:'Gym80 3001',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Contraction 2s en haut'},
+      {id:'la6',nom:'Mollets Debout',machine:'Gym80 3018',series:4,repsTarget:'20',reposSec:45,tempo:'2-2-1-0',isForce:false,notes:'Pause STRICTE 2s en bas'},
+      {id:'la7',nom:'Crunch Machine',machine:'Gym80 3008',series:3,repsTarget:'20',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Pas le Hammer Oblique Crunch',badge:'ABS'}
+    ]},
+    {key:'B',label:'B',color:'#fb923c',exercices:[
+      {id:'lb1',nom:'Belt Squat',machine:'Gym80 4360',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Zéro charge sur la colonne'},
+      {id:'lb2',nom:'Fentes Arrière',machine:'Haltères',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-0',isForce:false,notes:'LOI DU GAUCHE',badge:'ASYM'},
+      {id:'lb3',nom:'Hip Thrust Guidé',machine:'Hammer Glute Drive',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s en haut'},
+      {id:'lb4',nom:'Leg Curl Assis',machine:'Gym80 3003',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Contraction 2s en bas'},
+      {id:'lb5',nom:'Mollets Debout',machine:'Gym80 3018',series:3,repsTarget:'20',reposSec:45,tempo:'2-2-1-0',isForce:false,notes:'Pause 2s en bas'},
+      {id:'lb6',nom:'Hollow Body Hold',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Dos plaqué 100% au sol'}
+    ]}
+  ]},
+  {id:'samedi',tag:'UPPER',jour:'SAM',couleur:'#60a5fa',focus:'Volume · Densité · Congestion',options:[
+    {key:'A',label:'A',color:'#60a5fa',exercices:[
+      {id:'ua1',nom:'Tractions Pronation',machine:'Gym80 3017',series:4,repsTarget:'6',reposSec:120,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · réduire assistance chaque semaine',badge:'FORCE'},
+      {id:'ua2',nom:'Développé Couché Iso-Lat Assis',machine:'Hammer Seated Bench',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE',badge:'ASYM'},
+      {id:'ua3',nom:'Pullover Machine',machine:'Hammer Pullover',series:3,repsTarget:'12-15',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · avant les Dips — repose le coude'},
+      {id:'ua4',nom:'Dips Poids de Corps',machine:'Barres parallèles',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Buste penché · arrêt strict parallèle'},
+      {id:'ua5',nom:'SS Latérales + Butterfly Rev',machine:'Gym80 3050 + Gym80 3025',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Pas de repos entre 5A et 5B',badge:'SS'},
+      {id:'ua6',nom:'SS Bayesian + Extension OH',machine:'Gym80 5104 Cable Art',series:3,repsTarget:'12',reposSec:75,tempo:'2-0-1-1',isForce:false,notes:'LOI DU GAUCHE STRICTE · 1 série bonus G',badge:'SS'},
+      {id:'ua7',nom:'Dead Hang',machine:'Gym80 4170 Tour',series:2,repsTarget:'MAX',reposSec:60,tempo:'Statique',isForce:false,notes:'SANGLES INTERDITES · décompression colonne',badge:'FIN'}
+    ]},
+    {key:'B',label:'B',color:'#a78bfa',exercices:[
+      {id:'ub1',nom:'Tirage Vertical Lourd',machine:'Gym80 4116',series:3,repsTarget:'6-8',reposSec:120,tempo:'3-0-1-1',isForce:true,notes:'SANGLES',badge:'FORCE'},
+      {id:'ub2',nom:'Développé Couché Iso-Lat Assis',machine:'Hammer Seated Bench',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE',badge:'ASYM'},
+      {id:'ub3',nom:'Pullover Machine',machine:'Hammer Pullover',series:3,repsTarget:'12-15',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · avant les Dips'},
+      {id:'ub4',nom:'Dips Poids de Corps',machine:'Barres parallèles',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Buste penché · arrêt strict parallèle'},
+      {id:'ub5',nom:'SS Latérales + Face Pull',machine:'Gym80 4012',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Pas de repos entre 5A et 5B',badge:'SS'},
+      {id:'ub6',nom:'SS Bayesian + Extension OH',machine:'Gym80 5104 ou 4012',series:3,repsTarget:'12',reposSec:75,tempo:'2-0-1-1',isForce:false,notes:'LOI DU GAUCHE STRICTE',badge:'SS'},
+      {id:'ub7',nom:'Dead Hang',machine:'Gym80 4170 Tour',series:2,repsTarget:'MAX',reposSec:60,tempo:'Statique',isForce:false,notes:'SANGLES INTERDITES',badge:'FIN'}
+    ]}
+  ]}
+];
+
+var COMMANDEMENTS = [
+  {num:'01',icon:'⏱',title:'Tempo Strict',detail:'3-0-1-1 → 3s descente / pause / 1s explosion / 1s contraction. TUT = facteur n°1 d\'hypertrophie.'},
+  {num:'02',icon:'◀',title:'Loi du Gauche',detail:'Gauche commence toujours sur l\'unilatéral. 1 série bonus uniquement à Gauche à la fin des iso-latéraux bras.'},
+  {num:'03',icon:'📈',title:'Ramping de Force',detail:'Exo n°1 : 3 séries montantes (12/6/2 reps) puis 3 séries de travail effectives.'},
+  {num:'04',icon:'◇',title:'Zéro Obliques',detail:'Interdiction de charger les obliques. V-Shape de face. Hammer Oblique Crunch interdit.'}
+];
+
+var FEU = [
+  {label:'🔴 NE PAS Y ALLER',color:'#f87171',border:'rgba(239,68,68,0.25)',bg:'rgba(239,68,68,0.06)',items:['Fièvre — même légère','Symptômes sous le cou','Moins de 5h de sommeil','Douleur articulaire franche']},
+  {label:'🟠 OPTION B SEULEMENT',color:'#fb923c',border:'rgba(251,146,60,0.25)',bg:'rgba(251,146,60,0.06)',items:['5-6h de sommeil — charges -20%','Courbatures sévères sur le groupe du jour','Fatigue nerveuse marquée','Petit rhume sans fièvre']},
+  {label:'🟢 Y ALLER',color:'#4ade80',border:'rgba(74,222,128,0.25)',bg:'rgba(74,222,128,0.06)',items:['Fatigue mentale / mauvaise journée','Courbatures légères sur autres groupes','Stress, tête pleine']}
+];
+
+var VOL = [
+  {m:'Grand Dorsal',    PULL:9,  PUSH:0, LOWER:0, UPPER:6},
+  {m:'Pectoraux',       PULL:0,  PUSH:9, LOWER:0, UPPER:6},
+  {m:'Biceps',          PULL:6,  PUSH:0, LOWER:0, UPPER:3},
+  {m:'Triceps',         PULL:0,  PUSH:5, LOWER:0, UPPER:6},
+  {m:'Deltoïde médial', PULL:0,  PUSH:4, LOWER:0, UPPER:3},
+  {m:'Deltoïde ant.',   PULL:0,  PUSH:6, LOWER:0, UPPER:0},
+  {m:'Deltoïde post.',  PULL:3,  PUSH:0, LOWER:0, UPPER:3},
+  {m:'Trapèzes',        PULL:4,  PUSH:0, LOWER:0, UPPER:0},
+  {m:'Érecteurs',       PULL:3,  PUSH:0, LOWER:0, UPPER:0},
+  {m:'Quadriceps',      PULL:0,  PUSH:0, LOWER:9, UPPER:0},
+  {m:'Ischio-jambiers', PULL:0,  PUSH:0, LOWER:6, UPPER:0},
+  {m:'Fessiers',        PULL:0,  PUSH:0, LOWER:7, UPPER:0},
+  {m:'Mollets',         PULL:0,  PUSH:0, LOWER:4, UPPER:0},
+  {m:'Abdominaux',      PULL:0,  PUSH:3, LOWER:3, UPPER:0}
+];
+
+// ═══ HELPERS ═══
+function fmtDate(s){return new Date(s).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});}
+function fmtDur(ms){var m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'):m+' min';}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function nowISO(){return new Date().toISOString();}
+function e(tag,cls,html,attrs){var d=document.createElement(tag);if(cls)d.className=cls;if(html!==undefined)d.innerHTML=html;if(attrs)for(var k in attrs)d.setAttribute(k,attrs[k]);return d;}
+function makeSet(type){return{poids:'',reps:'',done:false,type:type||'W'};}
+function initSets(ex){
+  if(ex.isForce)return[makeSet('R'),makeSet('R'),makeSet('R'),makeSet('W'),makeSet('W'),makeSet('W')];
+  return Array.from({length:ex.series},function(){return makeSet('W');});
+}
+function getSeance(id){return SEANCES.find(function(s){return s.id===id;});}
+function getOpt(seance,key){return seance.options.find(function(o){return o.key===key;});}
+
+// ═══ BADGE ═══
+function badgePill(badge){
+  if(!badge||!BADGE_COLORS[badge])return '';
+  var b=BADGE_COLORS[badge];
+  return '<span class="pill" style="background:'+b.bg+';color:'+b.color+';border-color:'+b.border+';">'+badge+'</span>';
+}
+
+// ═══ TIMER ═══
+function playRestAlert(){
+  // Vibration
+  if(navigator.vibrate)navigator.vibrate([200,100,200]);
+  // Son bip
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,150].forEach(function(delay){
+      var o=ctx.createOscillator();var g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=880;o.type='sine';
+      g.gain.setValueAtTime(0,ctx.currentTime+delay/1000);
+      g.gain.linearRampToValueAtTime(0.3,ctx.currentTime+delay/1000+0.01);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay/1000+0.18);
+      o.start(ctx.currentTime+delay/1000);
+      o.stop(ctx.currentTime+delay/1000+0.2);
+    });
+  }catch(e){}
+}
+
+function toggleSSTimer(ssId, totalSec){
+  if(activeTimers[ssId]){
+    clearInterval(activeTimers[ssId].interval);
+    delete activeTimers[ssId];
+    var el=document.getElementById('ss-timer-'+ssId);
+    if(el){el.style.borderColor='#2a2a2e';el.style.background='#111113';el.innerHTML='<span style="font-size:11px;font-family:monospace;font-weight:700;color:#52525b">'+String(Math.floor(totalSec/60)).padStart(2,'0')+':'+String(totalSec%60).padStart(2,'0')+'</span><span style="font-size:8px;color:#3f3f46">REPOS</span>';}
+    return;
+  }
+  var rem=totalSec;
+  var interval=setInterval(function(){
+    rem--;
+    var el=document.getElementById('ss-timer-'+ssId);
+    if(el){
+      var m=Math.floor(rem/60),s=rem%60;
+      el.innerHTML='<span style="font-size:11px;font-family:monospace;font-weight:700;color:#fbbf24">'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'</span><span style="font-size:8px;color:#fbbf24">REPOS</span>';
+    }
+    if(activeTimers[ssId])activeTimers[ssId].rem=rem;
+    if(rem<=0){clearInterval(interval);delete activeTimers[ssId];playRestAlert();}
+  },1000);
+  activeTimers[ssId]={interval:interval,rem:rem};
+  var el=document.getElementById('ss-timer-'+ssId);
+  if(el){el.style.borderColor='#fbbf24';el.style.background='rgba(251,191,36,0.08)';}
+}
+
+function startTimer(exId, seconds){
+  if(activeTimers[exId]){clearInterval(activeTimers[exId].interval);delete activeTimers[exId];}
+  var rem = seconds;
+  var wrap = document.getElementById('timer-'+exId);
+  if(!wrap)return;
+  function updateTimer(){
+    var circle = document.getElementById('tcircle-'+exId);
+    var txt = document.getElementById('ttxt-'+exId);
+    var lbl = document.getElementById('tlbl-'+exId);
+    if(!circle||!txt)return;
+    var pct = seconds>0?rem/seconds:0;
+    var R=18,C=2*Math.PI*R;
+    circle.setAttribute('stroke-dasharray',(C*pct)+' '+C);
+    var mm=Math.floor(rem/60),ss=rem%60;
+    txt.textContent = rem===0?'OK':mm+':'+String(ss).padStart(2,'0');
+    var col = rem===0?'#22c55e':'#4ade80';
+    circle.setAttribute('stroke',col);
+    txt.style.color=col;
+    if(lbl)lbl.textContent=rem===0?'GO !':'EN COURS';
+    if(wrap)wrap.style.borderColor=rem===0?'rgba(34,197,94,0.25)':'rgba(74,222,128,0.25)';
+  }
+  updateTimer();
+  var interval = setInterval(function(){
+    rem--;
+    updateTimer();
+    if(rem<=0){clearInterval(interval);delete activeTimers[exId];playRestAlert();}
+  },1000);
+  activeTimers[exId]={interval:interval,rem:rem,seconds:seconds};
+}
+
+function adjustTimer(exId, delta){
+  if(activeTimers[exId]){clearInterval(activeTimers[exId].interval);delete activeTimers[exId];}
+  var d=sessData[exId];
+  if(!d)return;
+  d.timerSec=Math.max(15,(d.timerSec||60)+delta);
+  var txt=document.getElementById('tsec-'+exId);
+  if(txt)txt.textContent=d.timerSec+'s';
+}
+
+// ═══ SESSION TIMER ═══
+function startSessTimer(){
+  sessStart = Date.now() - sessElapsed;
+  sessTimer = setInterval(function(){
+    sessElapsed = Date.now()-sessStart;
+    var mm=Math.floor(sessElapsed/60000),ss=Math.floor((sessElapsed%60000)/1000);
+    var el=document.getElementById('sess-elapsed');
+    if(el)el.textContent=String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+  },1000);
+}
+
+// ═══ RENDER HELPERS ═══
+function renderBadge(badge){
+  if(!badge||!BADGE_COLORS[badge])return '';
+  var b=BADGE_COLORS[badge];
+  return ' <span class="pill" style="background:'+b.bg+';color:'+b.color+';border-color:'+b.border+'">'+badge+'</span>';
+}
+
+function renderSessEx(ex,idx,total){
+  var d=sessData[ex.id]||{sets:initSets(ex),memo:'',timerSec:ex.reposSec||60};
+  if(!sessData[ex.id])sessData[ex.id]=d;
+  var sets=d.sets;
+  var workSets=sets.filter(function(s){return s.type!=='R';});
+  var doneSets=workSets.filter(function(s){return s.done;}).length;
+  var allDone=workSets.length>0&&doneSets===workSets.length;
+  var isCurrent=(idx===0&&!Object.keys(sessData).some(function(k){var sd=sessData[k];return sd.sets&&sd.sets.filter(function(s){return s.type!=='R'&&s.done;}).length>0;}));
+  var isOpen=sessExOpen[ex.id]!==false;
+  var showDetail=sessExDetail[ex.id];
+  var lastStr=getLastStr(ex.id);
+  var borderCol=allDone?'rgba(34,197,94,0.25)':'#1e1e22';
+  var leftCol=allDone?'#22c55e':'#3f3f46';
+
+  var setsHtml='';
+  for(var i=0;i<sets.length;i++){
+    var s=sets[i];
+    var isR=s.type==='R';
+    var borderC=isR?'rgba(251,191,36,0.2)':'#1e1e22';
+    var tc=isR?'#fbbf24':'#f4f4f5';
+    var numLabel=isR?('R'+(i+1)):String(i-2<1?i+1:i-2);
+    // Calcul index work-set (pour pointer le bon set dans la popup)
+    var workIdx=isR?-1:(function(){var c=0;for(var j=0;j<i;j++){if(sets[j].type!=='R')c++;}return c;}());
+    setsHtml+='<div class="set-row" id="setrow-'+ex.id+'-'+i+'">'
+      +'<span style="font-size:9px;font-family:monospace;color:'+(isR?'#fbbf24':'#3f3f46')+';width:18px;flex-shrink:0;text-align:center;">'+numLabel+'</span>'
+      +'<div class="set-input-wrap" style="border-color:'+borderC+'">'
+      +'<input type="number" min="0" step="0.5" value="'+s.poids+'" placeholder="—" '
+      +'style="color:'+tc+'" '
+      +'onchange="updateSet(\''+ex.id+'\','+i+',\'poids\',this.value)" '
+      +'onclick="event.stopPropagation()" class="set-input"/>'
+      +'<span style="font-size:9px;color:#3f3f46">kg</span>'
+      +'</div>'
+      +'<span style="font-size:11px;color:#2a2a2e;flex-shrink:0">×</span>'
+      +'<div class="set-input-wrap" style="border-color:'+borderC+'">'
+      +'<input type="number" min="0" value="'+s.reps+'" placeholder="'+ex.repsTarget+'" '
+      +'style="color:'+tc+'" '
+      +'onchange="updateSet(\''+ex.id+'\','+i+',\'reps\',this.value)" '
+      +'onclick="event.stopPropagation()" class="set-input"/>'
+      +'<span style="font-size:9px;color:#3f3f46">reps</span>'
+      +'</div>'
+      +(!isR?'<button onclick="event.stopPropagation();showHistPopup(\''+ex.id+'\','+workIdx+')" '
+        +'style="width:26px;height:26px;border-radius:7px;border:1px solid #1e1e22;background:#111113;color:#3f3f46;font-size:11px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:color 0.12s" '
+        +'title="Historique">⏱</button>':'<span style="width:26px;flex-shrink:0"></span>')
+      +'<button class="set-check" '
+      +'style="border-color:'+(s.done?TAG_COLORS[activeSession.seance.tag]||'#60a5fa':'#2a2a2e')+';background:'+(s.done?(TAG_COLORS[activeSession.seance.tag]||'#60a5fa')+'20':'transparent')+'" '
+      +'onclick="toggleSet(\''+ex.id+'\','+i+')" id="setcheck-'+ex.id+'-'+i+'">'
+      +(s.done?'<span style="font-size:10px;font-weight:700;color:'+(TAG_COLORS[activeSession.seance.tag]||'#60a5fa')+'">✓</span>':'')
+      +'</button>'
+      +'</div>';
+  }
+
+  var rampHtml='';
+  if(ex.isForce){
+    rampHtml='<div class="ramp-mini">'
+      +'<div class="ramp-cell"><div style="font-size:9px;font-family:monospace;font-weight:700;color:#fbbf24">R1</div><div style="font-size:7px;color:#a16207">12 reps</div></div>'
+      +'<div class="ramp-cell"><div style="font-size:9px;font-family:monospace;font-weight:700;color:#fbbf24">R2</div><div style="font-size:7px;color:#a16207">6 reps</div></div>'
+      +'<div class="ramp-cell"><div style="font-size:9px;font-family:monospace;font-weight:700;color:#fbbf24">R3</div><div style="font-size:7px;color:#a16207">2 reps</div></div>'
+      +'</div>';
+  }
+
+  var timerHtml='';
+  if(ex.reposSec>0){
+    timerHtml='<div class="timer-wrap" id="timer-'+ex.id+'">'
+      +'<button class="timer-btn" onclick="adjustTimer(\''+ex.id+'\',-15)">-</button>'
+      +'<div class="timer-inner" onclick="startTimer(\''+ex.id+'\',sessData[\''+ex.id+'\'].timerSec||'+ex.reposSec+')" style="border-color:#2a2a2e;background:#111113">'
+      +'<div style="position:relative;width:36px;height:36px;flex-shrink:0">'
+      +'<svg viewBox="0 0 40 40" style="width:36px;height:36px;transform:rotate(-90deg)">'
+      +'<circle cx="20" cy="20" r="18" fill="none" stroke="#222225" stroke-width="3"/>'
+      +'<circle cx="20" cy="20" r="18" fill="none" stroke="#52525b" stroke-width="3" stroke-dasharray="0 113" stroke-linecap="round" id="tcircle-'+ex.id+'"/>'
+      +'</svg>'
+      +'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:monospace;font-weight:700;color:#52525b" id="ttxt-'+ex.id+'">'+Math.floor(ex.reposSec/60)+':'+String(ex.reposSec%60).padStart(2,'0')+'</span>'
+      +'</div>'
+      +'<div><div style="font-size:11px;font-weight:700;color:#52525b;text-transform:uppercase;letter-spacing:0.05em" id="tlbl-'+ex.id+'">REPOS</div>'
+      +'<div style="font-size:9px;color:#3f3f46"><span id="tsec-'+ex.id+'">'+d.timerSec+'</span>s · tap</div></div>'
+      +'</div>'
+      +'<button class="timer-btn" onclick="adjustTimer(\''+ex.id+'\',15)">+</button>'
+      +'</div>';
+  }
+
+  var detailHtml=showDetail?'<div style="display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:8px;background:#0d0d0f;border:1px solid #1a1a1d">'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+    +'<span style="font-size:10px;color:#52525b">Tempo <strong style="color:#d4d4d8;font-family:monospace">'+ex.tempo+'</strong></span>'
+    +'<span style="font-size:10px;color:#52525b">Repos <strong style="color:#d4d4d8;font-family:monospace">'+ex.reposSec+'s</strong></span>'
+    +'</div>'
+    +(ex.notes?'<div style="font-size:10px;color:#71717a;line-height:1.5">'+ex.notes+'</div>':'')
+    +'</div>':'';
+
+  var moveHtml='<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">'
+    +'<button onclick="moveEx(\''+ex.id+'\',\'up\')" style="width:16px;height:12px;border:none;background:transparent;color:'+(idx===0?'#1e1e22':'#52525b')+';cursor:pointer;font-size:8px;padding:0;line-height:1"'+(idx===0?' disabled':'')+'>▲</button>'
+    +'<button onclick="moveEx(\''+ex.id+'\',\'down\')" style="width:16px;height:12px;border:none;background:transparent;color:'+(idx===total-1?'#1e1e22':'#52525b')+';cursor:pointer;font-size:8px;padding:0;line-height:1"'+(idx===total-1?' disabled':'')+'>▼</button>'
+    +'</div>';
+
+  var addRemHtml='<div style="display:flex;gap:6px">'
+    +'<button onclick="addSet(\''+ex.id+'\')" style="flex:1;padding:6px;border-radius:8px;border:1px dashed #2a2a2e;background:transparent;color:#52525b;font-size:11px;cursor:pointer;font-family:inherit">+ Série</button>'
+    +(workSets.length>1?'<button onclick="removeSet(\''+ex.id+'\')" style="padding:6px 10px;border-radius:8px;border:1px solid #2a2a2e;background:transparent;color:#52525b;font-size:11px;cursor:pointer;font-family:inherit">- Série</button>':'')
+    +'</div>';
+
+  return '<div class="sess-ex" id="sess-ex-'+ex.id+'" style="border:1px solid '+borderCol+';border-left:3px solid '+leftCol+';background:rgba(12,12,14,0.95)">'
+    +'<div style="display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer" onclick="toggleSessEx(\''+ex.id+'\')">'
+    +moveHtml
+    +'<div style="width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-family:monospace;font-weight:700;background:'+(allDone?'rgba(34,197,94,0.15)':'rgba(39,39,42,0.4)')+';color:'+(allDone?'#22c55e':'#52525b')+'">'+(allDone?'✓':ex.id.slice(-1))+'</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'
+    +'<span style="font-size:13px;font-weight:600;color:#f4f4f5;line-height:1.2">'+ex.nom+'</span>'
+    +renderBadge(ex.badge)
+    +'</div>'
+    +'<div style="font-size:9px;color:#3f3f46;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ex.machine+'</div>'
+    +'</div>'
+    +'<div style="font-size:13px;font-family:monospace;font-weight:700;color:'+(allDone?'#22c55e':activeSession.opt.color)+'">'+doneSets+'/'+workSets.length+'</div>'
+    +'<button onclick="event.stopPropagation();showSwapPopup(\''+ex.id+'\')" style="width:26px;height:26px;border-radius:7px;border:1px solid #1e1e22;background:#111113;color:#52525b;font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center" title="Changer exercice">⇄</button>'
+    +'</div>'
+    +(isOpen?'<div style="border-top:1px solid #1a1a1d;padding:10px 12px;display:flex;flex-direction:column;gap:8px" id="sess-ex-body-'+ex.id+'">'
+      +(lastStr?'<div style="font-size:10px;color:#3f3f46;font-family:monospace">Dernière fois : <span style="color:#71717a">'+lastStr+'</span></div>':'')
+      +rampHtml
+      +'<div style="display:flex;flex-direction:column;gap:4px">'+setsHtml+'</div>'
+      +addRemHtml
+      +timerHtml
+      +'<button class="detail-toggle" onclick="toggleDetail(\''+ex.id+'\')">'+( showDetail?'▲ Masquer':'▼ Tempo · Notes')+'</button>'
+      +detailHtml
+      +'</div>':'')
+    +'</div>';
+}
+
+function getLastStr(exId){
+  var found=getLastSetsData(exId);
+  if(!found)return null;
+  var parts=found.sets.filter(function(s){return s.done&&s.poids&&s.reps;}).map(function(s){return s.poids+'kg×'+s.reps;});
+  return parts.length?parts.join(' · '):null;
+}
+
+function getLastSetsData(exId){
+  // Cherche dans toutes les variantes confondues
+  var lastSess=null;
+  for(var i=0;i<DB.length;i++){
+    var s=DB[i];
+    var hasEx=s.exercises&&s.exercises.some(function(e){return e.id===exId;});
+    if(hasEx){
+      if(!lastSess||new Date(s.date)>new Date(lastSess.date))lastSess=s;
+    }
+  }
+  if(!lastSess)return null;
+  var ex=lastSess.exercises&&lastSess.exercises.find(function(e){return e.id===exId;});
+  if(!ex||!ex.data||!ex.data.sets)return null;
+  return {sets:ex.data.sets, date:lastSess.date, optLabel:lastSess.optLabel, tag:lastSess.tag};
+}
+
+// ═══ HISTORIQUE POPUP ═══
+function showHistPopup(exId, setIdx){
+  var data=getLastSetsData(exId);
+  var overlay=document.createElement('div');
+  overlay.className='hist-overlay';
+  overlay.onclick=function(e){if(e.target===overlay)closeHistPopup();};
+
+  var workSets=data?data.sets.filter(function(s){return s.type!=='W'||s.type==='W';})
+    .filter(function(s){return s.type!=='R';}):[];
+
+  var setsRows='';
+  if(data&&workSets.length>0){
+    setsRows=workSets.map(function(s,i){
+      var isCurrent=(i===setIdx);
+      return '<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:'+(isCurrent?'rgba(96,165,250,0.08)':'#0d0d0f')+';border:1px solid '+(isCurrent?'rgba(96,165,250,0.25)':'#1a1a1d')+';margin-bottom:4px">'
+        +'<span style="font-size:9px;font-family:monospace;color:#3f3f46;width:20px;flex-shrink:0;text-align:center">'+(i+1)+'</span>'
+        +(s.done&&s.poids?'<span style="font-family:monospace;font-weight:700;color:#f4f4f5;font-size:14px">'+s.poids+' <span style="font-size:10px;color:#52525b">kg</span></span>'
+          +'<span style="color:#2a2a2e;font-size:11px">×</span>'
+          +'<span style="font-family:monospace;font-weight:700;color:#f4f4f5;font-size:14px">'+s.reps+' <span style="font-size:10px;color:#52525b">reps</span></span>'
+        :'<span style="font-size:11px;color:#3f3f46;font-style:italic">— non enregistré</span>')
+        +(isCurrent?'<span style="margin-left:auto;font-size:8px;font-family:monospace;color:#60a5fa;background:rgba(96,165,250,0.1);padding:2px 5px;border-radius:4px">SET ACTUEL</span>':'')
+        +'</div>';
+    }).join('');
+  }else{
+    setsRows='<div style="text-align:center;padding:16px 0;font-size:12px;color:#52525b">Première fois sur cet exercice</div>';
+  }
+
+  var dateStr=data?('<span style="color:#71717a">'+fmtDate(data.date)+'</span> · <span style="color:#52525b">Opt '+data.optLabel+'</span>'):'';
+
+  overlay.innerHTML='<div class="hist-sheet">'
+    +'<div class="hist-handle"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div>'
+    +'<div style="font-size:12px;font-weight:700;color:#f4f4f5">Dernière séance</div>'
+    +(data?'<div style="font-size:10px;margin-top:2px">'+dateStr+'</div>':'')
+    +'</div>'
+    +'<button onclick="closeHistPopup()" style="background:#1a1a1d;border:1px solid #2a2a2e;border-radius:8px;padding:5px 10px;color:#71717a;font-size:11px;cursor:pointer;font-family:inherit">Fermer</button>'
+    +'</div>'
+    +setsRows
+    +'</div>';
+
+  document.body.appendChild(overlay);
+  document.getElementById('hist-overlay-ref') && document.getElementById('hist-overlay-ref').remove();
+  overlay.id='hist-overlay-ref';
+}
+function closeHistPopup(){var o=document.getElementById('hist-overlay-ref');if(o)o.remove();}
+
+// ═══ SESSION ACTIONS ═══
+function updateSet(exId,idx,field,val){
+  var d=sessData[exId];if(!d)return;
+  var wasD=d.sets[idx].done;
+  d.sets[idx][field]=val;
+  if(!wasD&&d.sets[idx].done&&d.sets[idx].type!=='R'){
+    var sec=d.timerSec||60;
+    startTimer(exId,sec);
+    checkAutoAdvance(exId);
+  }
+  updateSessProgress();
+}
+
+function toggleSet(exId,idx){
+  var d=sessData[exId];if(!d)return;
+  d.sets[idx].done=!d.sets[idx].done;
+  var set=d.sets[idx];
+  var btn=document.getElementById('setcheck-'+exId+'-'+idx);
+  if(btn){
+    var col=activeSession.opt.color;
+    var isPR=set.done&&set.type!=='R'&&set.poids&&(parseFloat(set.poids)||0)>getRecordPoids(exId);
+    btn.style.borderColor=set.done?(isPR?'#fbbf24':col):'#2a2a2e';
+    btn.style.background=set.done?(isPR?'rgba(251,191,36,0.2)':col+'20'):'transparent';
+    btn.innerHTML=set.done?'<span style="font-size:10px;font-weight:700;color:'+(isPR?'#fbbf24':col)+'">'+(isPR?'🏆':'✓')+'</span>':'';
+  }
+  if(set.done&&set.type!=='R'){
+    if(!deloadMode)startTimer(exId,d.timerSec||60);
+    checkAutoAdvance(exId);
+    // Détection PR
+    if(set.poids){
+      var p=parseFloat(set.poids)||0;
+      var record=getRecordPoids(exId);
+      if(p>record){
+        var ex=activeSession.opt.exercices.find(function(e){return e.id===exId;});
+        sessPRs[exId]={nom:ex?ex.nom:exId,poids:p,reps:set.reps||'?'};
+        updatePRBadge();
+      }
+    }
+  }
+  updateSessExHeader(exId);
+  updateSessProgress();
+}
+
+function checkAutoAdvance(exId){
+  var d=sessData[exId];if(!d)return;
+  var ws=d.sets.filter(function(s){return s.type!=='R';});
+  if(ws.every(function(s){return s.done;})){
+    var order=activeSession.order;
+    var idx=order.indexOf(exId);
+    if(idx>=0&&idx<order.length-1){
+      var nextId=order[idx+1];
+      setTimeout(function(){
+        if(!sessExOpen[nextId]){sessExOpen[nextId]=true;render();}
+      },400);
+    }
+  }
+}
+
+function updateSessExHeader(exId){
+  var el=document.getElementById('sess-ex-'+exId);
+  if(!el)return;
+  var d=sessData[exId];if(!d)return;
+  var ws=d.sets.filter(function(s){return s.type!=='R';});
+  var done=ws.filter(function(s){return s.done;}).length;
+  var allDone=done===ws.length&&ws.length>0;
+  el.style.borderColor=allDone?'rgba(34,197,94,0.25)':'#1e1e22';
+  el.style.borderLeftColor=allDone?'#22c55e':'#3f3f46';
+  var cnt=el.querySelector('[data-cnt]');
+  if(!cnt){var headers=el.querySelectorAll('div');headers.forEach(function(h){if(h.textContent.match(/^\d+\/\d+$/))cnt=h;});}
+}
+
+function addSet(exId){
+  var d=sessData[exId];if(!d)return;
+  d.sets.push(makeSet('W'));
+  renderSessView();
+}
+
+function removeSet(exId){
+  var d=sessData[exId];if(!d)return;
+  var ws=d.sets.map(function(s,i){return{s:s,i:i};}).filter(function(x){return x.s.type!=='R';});
+  if(ws.length<=1)return;
+  var last=ws[ws.length-1];
+  d.sets.splice(last.i,1);
+  renderSessView();
+}
+
+function updateMemo(exId,val){var d=sessData[exId];if(d)d.memo=val;}
+function toggleSessEx(exId){sessExOpen[exId]=!sessExOpen[exId];renderSessView();}
+function toggleDetail(exId){sessExDetail[exId]=!sessExDetail[exId];renderSessView();}
+
+function moveEx(exId,dir){
+  var order=activeSession.order;
+  var idx=order.indexOf(exId);
+  if(dir==='up'&&idx>0){var tmp=order[idx-1];order[idx-1]=order[idx];order[idx]=tmp;}
+  if(dir==='down'&&idx<order.length-1){var tmp=order[idx];order[idx]=order[idx+1];order[idx+1]=tmp;}
+  renderSessView();
+}
+
+function updatePRBadge(){
+  var btn=document.getElementById('finish-btn');
+  if(!btn)return;
+  var allSets=Object.values(sessData).reduce(function(a,d){return a+d.sets.length;},0);
+  var doneSets=Object.values(sessData).reduce(function(a,d){return a+d.sets.filter(function(s){return s.done;}).length;},0);
+  var prCount=Object.keys(sessPRs).length;
+  var prLabel=prCount>0?' · '+prCount+' 🏆':'';
+  btn.textContent='Terminer · '+doneSets+'/'+allSets+' séries'+prLabel;
+}
+
+function updateSessProgress(){
+  var allSets=0,doneSets=0;
+  Object.values(sessData).forEach(function(d){allSets+=d.sets.length;doneSets+=d.sets.filter(function(s){return s.done;}).length;});
+  var pct=allSets>0?doneSets/allSets:0;
+  var fill=document.getElementById('sess-prog-fill');
+  if(fill)fill.style.width=(pct*100)+'%';
+  var cnt=document.getElementById('sess-sets-cnt');
+  if(cnt)cnt.textContent=doneSets+'/'+allSets+' séries';
+}
+
+// ═══ START / FINISH SESSION ═══
+// ═══ SWAP EXERCICE — variantes par exercice ═══
+var VARIANTES = {
+  // ── PULL ──
+  'pa1':[{rank:'🥇',nom:'Rowing T-Bar',machine:'T-Bar Row Pure Strength Technogym',detail:'Même pattern de tirage horizontal. Buste à 45°, sangles, tirage vers le nombril.'},
+         {rank:'🥈',nom:'Rowing Barre Libre',machine:'Rack Eleiko — barre olympique',detail:'Seulement si cou mobile. 3×5-7, buste à 45°, sangles.'},
+         {rank:'🥉',nom:'Rowing Assis Appuyé',machine:'Gym80 4016 ROWING STATION',detail:'Support thoracique — isolement total du dos, zéro lombaires.'}],
+  'pb1':[{rank:'🥇',nom:'Revenir Option A',machine:'Hammer ISO-Lateral Row',detail:'Toujours le bon choix à 6h. Pas de compromis sur le cou.'}],
+  'pc1':[{rank:'🥇',nom:'Rowing T-Bar',machine:'T-Bar Row Pure Strength Technogym',detail:'Même pattern de tirage horizontal. Buste à 45°, sangles.'},
+         {rank:'🥈',nom:'Rowing Barre Libre',machine:'Rack Eleiko — barre olympique',detail:'Seulement si cou mobile. 3×5-7, buste à 45°, sangles.'},
+         {rank:'🥉',nom:'Rowing Assis Appuyé',machine:'Gym80 4016 ROWING STATION',detail:'Support thoracique — isolement total du dos.'}],
+  'pa2':[{rank:'🥇',nom:'Lat Pulldown Machine',machine:'Gym80 3020 Lat Pulldown Machine',detail:'Bon substitut direct. Légèrement moins de liberté.'},
+         {rank:'🥈',nom:'Tirage Câble Art Latissimus',machine:'Gym80 5102 Cable Art — Latissimus & Trapezius',detail:'Câble Art dédié dos/trapèzes. Tension constante.'},
+         {rank:'🥉',nom:'Tractions Prise Large',machine:'Gym80 3017 Kneeling/Chinning-Dipping Machine',detail:'Poids de corps ou sac lesté. Recrutement grand dorsal plus complet si maîtrisé.'}],
+  'pb2':[{rank:'🥇',nom:'Lat Pulldown Machine',machine:'Gym80 3020 Lat Pulldown Machine',detail:'Bon substitut direct.'},
+         {rank:'🥈',nom:'Tirage Câble Art',machine:'Gym80 5102 Cable Art — Latissimus',detail:'Tension constante.'}],
+  'pc2':[{rank:'🥇',nom:'Lat Pulldown Machine',machine:'Gym80 3020 Lat Pulldown Machine',detail:'Bon substitut direct.'},
+         {rank:'🥈',nom:'Tirage Câble Art',machine:'Gym80 5102 Cable Art — Latissimus',detail:'Tension constante.'}],
+  'pa3':[{rank:'🥇',nom:'Rowing Assis Support Thoracique',machine:'Gym80 3040 Seated Row Machine',detail:'Support thoracique isole le dos à 100%. Bon substitut si 4016 prise.'},
+         {rank:'🥈',nom:'Rowing Câble Bas 4012',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'Même angle de tirage, tension constante tout le mouvement.'},
+         {rank:'🥉',nom:'Rowing Prise Haute',machine:'Hammer ISO-Lateral High Row',detail:'Angle plus haut — cible davantage les trapèzes supérieurs.'}],
+  'pb3':[{rank:'🥇',nom:'Rowing Assis Support Thoracique',machine:'Gym80 3040 Seated Row Machine',detail:'Support thoracique isole le dos à 100%.'},
+         {rank:'🥈',nom:'Rowing Câble Bas 4012',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'Tension constante.'}],
+  'pc3':[{rank:'🥇',nom:'Rowing Assis Support Thoracique',machine:'Gym80 3040 Seated Row Machine',detail:'Support thoracique isole le dos à 100%.'},
+         {rank:'🥈',nom:'Rowing Câble Bas 4012',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'Tension constante.'}],
+  'pa4':[{rank:'🥇',nom:'Butterfly Reverse',machine:'Gym80 3025 Butterfly Reverse',detail:'Même cible arrière épaule. Contraction 2s.'},
+         {rank:'🥈',nom:'Face Pull Câble Art',machine:'Gym80 5101 Cable Art — Shoulder & Back',detail:'Câble Art dédié épaules/dos.'}],
+  'pb5':[{rank:'🥇',nom:'Butterfly Reverse',machine:'Gym80 3025 Butterfly Reverse',detail:'Même cible arrière épaule. Contraction 2s.'}],
+  'pc5':[{rank:'🥇',nom:'Butterfly Reverse',machine:'Gym80 3025 Butterfly Reverse',detail:'Même cible arrière épaule. Contraction 2s.'}],
+  'pa5':[{rank:'🥇',nom:'Curl Biceps Machine Gym80',machine:'Gym80 3010 Biceps Machine',detail:'Machine guidée Gym80 — même isolation. Loi du Gauche applicable.'},
+         {rank:'🥈',nom:'Curl Pupitre Supination',machine:'Support biceps assis + Haltère',detail:'Banc pupitre + haltère. Même cible chef court. Loi du Gauche.'},
+         {rank:'🥉',nom:'Curl Incliné Haltère Supination',machine:'Banc inclinable 60°',detail:'Bras pendants derrière le dossier. Étirement maximal + pic du biceps.'}],
+  'pc4':[{rank:'🥇',nom:'Curl Biceps Machine Gym80',machine:'Gym80 3010 Biceps Machine',detail:'Machine guidée Gym80 — même isolation. Loi du Gauche applicable.'},
+         {rank:'🥈',nom:'Curl Pupitre Supination',machine:'Support biceps assis + Haltère',detail:'Banc pupitre + haltère. Même cible chef court. Loi du Gauche.'},
+         {rank:'🥉',nom:'Curl Incliné Haltère Supination',machine:'Banc inclinable 60°',detail:'Bras pendants derrière le dossier.'}],
+  'pa6':[{rank:'🥇',nom:'Curl Marteau Câble',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'Tension constante sur tout le mouvement. Debout.'},
+         {rank:'🥈',nom:'Zottman Curl',machine:'Haltères — assis sur banc',detail:'Montée supination, descente pronation lente 3s. Biceps + brachioradial.'}],
+  'pb6':[{rank:'🥇',nom:'Curl Marteau Haltères Assis',machine:'Haltères — assis sur banc',detail:'Assis sur banc, dos droit.'}],
+  'pc6':[{rank:'🥇',nom:'Curl Marteau Haltères Assis',machine:'Haltères — assis sur banc',detail:'Assis sur banc, dos droit.'}],
+  'pa7':[{rank:'🥇',nom:'Machine Lombaires',machine:'Gym80 3007 Lower Back Machine',detail:'Machine guidée — même cible. Plus sécurisé si lombaires sensibles.'},
+         {rank:'🥈',nom:'Good Morning Barre Légère',machine:'Rack Eleiko — barre fixe 10kg',detail:'Buste à 90°, renforcement chaîne postérieure.'}],
+  'pb7':[{rank:'🥇',nom:'Machine Lombaires',machine:'Gym80 3007 Lower Back Machine',detail:'Plus sécurisé si lombaires sensibles.'}],
+  'pc7':[{rank:'🥇',nom:'Machine Lombaires',machine:'Gym80 3007 Lower Back Machine',detail:'Plus sécurisé si lombaires sensibles.'}],
+
+  // ── PUSH ──
+  'pua1':[{rank:'🥇',nom:'Développé Couché Guidé Dual',machine:'Gym80 4364 Pure Kraft Bench Press Dual',detail:'Guidé, dual — rotation libre. Zéro contrainte articulaire. LOI DU GAUCHE.'},
+          {rank:'🥈',nom:'Développé Couché Iso-Latéral Allongé',machine:'Hammer ISO-Lateral Horizontal Bench Press',detail:'Plate Loaded allongé — iso-latéral, LOI DU GAUCHE.'}],
+  'pub1':[{rank:'🥇',nom:'Développé Couché Iso-Latéral Allongé',machine:'Hammer ISO-Lateral Horizontal Bench Press',detail:'Plate Loaded allongé. Même liberté articulaire.'}],
+  'puc1':[{rank:'🥇',nom:'Développé Couché Guidé Dual',machine:'Gym80 4364 Pure Kraft Bench Press Dual',detail:'Guidé, dual — rotation libre. Zéro contrainte articulaire.'},
+          {rank:'🥈',nom:'Développé Couché Iso-Latéral Allongé',machine:'Hammer ISO-Lateral Horizontal Bench Press',detail:'Plate Loaded allongé — iso-latéral.'}],
+  'pua2':[{rank:'🥇',nom:'Développé Incliné Smith Machine',machine:'Smith Machine à 30°',detail:'Trajectoire guidée safe pour le coude droit.'},
+          {rank:'🥈',nom:'Développé Incliné Hammer',machine:'Hammer ISO-Lateral Incline Press',detail:'Plate Loaded iso-latéral. LOI DU GAUCHE. Amplitude plus libre.'},
+          {rank:'🥉',nom:'Développé Incliné Barre Libre',machine:'Banc incliné dédié + barre Eleiko',detail:'30° max.'}],
+  'pub2':[{rank:'🥇',nom:'Smith Machine Incliné',machine:'Smith Machine à 30°',detail:'Trajectoire guidée — option originale du programme.'}],
+  'puc2':[{rank:'🥇',nom:'Développé Incliné Smith Machine',machine:'Smith Machine à 30°',detail:'Trajectoire guidée safe.'},
+          {rank:'🥈',nom:'Développé Incliné Hammer',machine:'Hammer ISO-Lateral Incline Press',detail:'Plate Loaded iso-latéral. LOI DU GAUCHE.'}],
+  'pua3':[{rank:'🥇',nom:'Développé Épaules Machine Gym80',machine:'Gym80 3032 Shoulder Press',detail:'Machine Gym80 classique.'},
+          {rank:'🥈',nom:'Développé Épaules Hammer',machine:'Hammer ISO-Lateral Shoulder Press',detail:'Plate Loaded iso-latéral. LOI DU GAUCHE.'}],
+  'pub3':[{rank:'🥇',nom:'Développé Épaules Iso-Latéral Hammer',machine:'Hammer ISO-Lateral Shoulder Press',detail:'Plate Loaded iso-latéral. LOI DU GAUCHE.'}],
+  'puc3':[{rank:'🥇',nom:'Développé Épaules Machine Gym80',machine:'Gym80 3032 Shoulder Press',detail:'Machine Gym80 classique.'},
+          {rank:'🥈',nom:'Développé Épaules Hammer',machine:'Hammer ISO-Lateral Shoulder Press',detail:'Plate Loaded iso-latéral. LOI DU GAUCHE.'}],
+  'pua4':[{rank:'🥇',nom:'Butterfly / Pec Deck',machine:'Gym80 3022 Butterfly',detail:'Bon substitut. Contraction 2s. Moins de tension en fin de mouvement.'},
+          {rank:'🥈',nom:'Écarté Câble Vis-à-vis',machine:'Gym80 4012 Cable Crossover — poulie haute ou milieu',detail:'Tension constante. Étirement profond des pecs.'}],
+  'pub4':[{rank:'🥇',nom:'Butterfly Pec Deck',machine:'Gym80 3022 Butterfly',detail:'Bon substitut. Contraction 2s.'}],
+  'puc4':[{rank:'🥇',nom:'Butterfly / Pec Deck',machine:'Gym80 3022 Butterfly',detail:'Bon substitut. Contraction 2s.'},
+          {rank:'🥈',nom:'Écarté Câble Vis-à-vis',machine:'Gym80 4012 Cable Crossover — poulie haute ou milieu',detail:'Tension constante.'}],
+  'pua5':[{rank:'🥇',nom:'Élévations Latérales Machine Plate Loaded',machine:'Hammer Plate Loaded Lateral Raise',detail:'Machine dédiée Hammer Strength. Tension constante.'},
+          {rank:'🥈',nom:'Élévations Latérales Machine avec Grips',machine:'Gym80 3050 Shoulder Lateral Raise',detail:'Prise avec grips — même muscle.'}],
+  'pub5':[{rank:'🥇',nom:'Élévations Latérales Machine Plate Loaded',machine:'Hammer Plate Loaded Lateral Raise',detail:'Machine dédiée Hammer.'}],
+  'puc5':[{rank:'🥇',nom:'Élévations Latérales Machine Plate Loaded',machine:'Hammer Plate Loaded Lateral Raise',detail:'Machine dédiée Hammer Strength.'},
+          {rank:'🥈',nom:'Élévations Latérales Machine avec Grips',machine:'Gym80 3050 Shoulder Lateral Raise',detail:'Même muscle.'}],
+  'pua6':[{rank:'🥇',nom:'Extension Triceps Machine Guidée',machine:'Gym80 3011 Triceps Extension Machine',detail:'Machine guidée — zéro contrainte articulaire. 100% safe.'},
+          {rank:'🥈',nom:'Extension Triceps Corde Duplex',machine:'Gym80 4033 Duplex Station',detail:'Station duplex dédiée. Rotation neutre — plus safe pour le coude.'}],
+  'pub6':[{rank:'🥇',nom:'Kickback Triceps Haltère Assis',machine:'Haltère + banc inclinable à 45°',detail:'Buste sur banc à 45°, extension derrière. LOI DU GAUCHE.'}],
+  'puc6':[{rank:'🥇',nom:'Extension Triceps Machine Guidée',machine:'Gym80 3011 Triceps Extension Machine',detail:'Machine guidée — zéro contrainte articulaire.'},
+          {rank:'🥈',nom:'Extension Triceps Corde Duplex',machine:'Gym80 4033 Duplex Station',detail:'Rotation neutre — safe pour le coude.'}],
+  'pua7':[{rank:'🥇',nom:'Abdominaux Machine Allongé',machine:'Gym80 3034 Lying Abdominal Machine',detail:'Allongé — isolation abdos.'},
+          {rank:'🥈',nom:'Relevés de Jambes Banc Décliné',machine:'Banc décliné avec support dédié',detail:'Assis en bout de banc, jambes tendues.'}],
+  'pub7':[{rank:'🥇',nom:'Relevés Banc Décliné',machine:'Banc décliné avec support',detail:'Jambes tendues.'}],
+  'puc7':[{rank:'🥇',nom:'Abdominaux Machine Allongé',machine:'Gym80 3034 Lying Abdominal Machine',detail:'Allongé — isolation abdos.'},
+          {rank:'🥈',nom:'Relevés de Jambes Banc Décliné',machine:'Banc décliné avec support dédié',detail:'Assis en bout de banc, jambes tendues.'}],
+
+  // ── LOWER ──
+  'la1':[{rank:'🥇',nom:'Leg Curl À Genoux Iso-Latéral',machine:'Hammer ISO-Lateral Kneeling Leg Curl',detail:'À genoux — même muscle, recrutement légèrement différent.'}],
+  'lb4':[{rank:'🥇',nom:'Leg Curl À Genoux',machine:'Hammer ISO-Lateral Kneeling Leg Curl',detail:'Même muscle, angle différent.'}],
+  'la2':[{rank:'🥇',nom:'Squat Machine Guidé',machine:'Gym80 4038 Pure Kraft Squat Machine',detail:'Squat guidé — descente 4s maintenue.'},
+         {rank:'🥈',nom:'Belt Squat',machine:'Gym80 4360 Pure Kraft Belt Squat',detail:'Zéro charge sur la colonne. Premium si lombaires sensibles.'}],
+  'lb1':[{rank:'🥇',nom:'Goblet Squat',machine:'Kettlebell ou haltère lourd',detail:'Charge sur l\'avant = dos droit naturel. Zéro compression.'}],
+  'la3':[{rank:'🥇',nom:'Hip Thrust Guidé',machine:'Hammer Plate Loaded Glute Drive',detail:'Fessiers et chaîne postérieure sans compression colonne.'},
+         {rank:'🥈',nom:'Pull-Through Câble',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'RDL avec tension constante, zéro charge axiale.'}],
+  'lb3':[{rank:'🥇',nom:'Kettlebell Swings',machine:'Zone Kettlebells',detail:'Explosif — chaîne postérieure dynamique. 3×15-20.'}],
+  'la4':[{rank:'🥇',nom:'Leg Press Plate Loaded',machine:'Hammer Plate Loaded Linear Leg Press',detail:'Charge plus progressive.'},
+         {rank:'🥈',nom:'Leg Press Verticale',machine:'Gym80 4354 Pure Kraft Vertical Leg Press',detail:'Angle différent — recrutement fessiers plus marqué.'}],
+  'la5':[{rank:'🥇',nom:'Leg Extension Iso-Latéral',machine:'Hammer ISO-Lateral Leg Extension',detail:'Iso-latéral — LOI DU GAUCHE si asymétrie quadriceps.'}],
+  'la6':[{rank:'🥇',nom:'Mollets à la Presse Leg Press',machine:'Gym80 3030 Seated Leg Press — pieds en bas',detail:'Même tempo 2-2-1-0. Pause 2s en bas obligatoire.'},
+         {rank:'🥈',nom:'Mollets Assis Plate Loaded',machine:'Hammer Plate Loaded Seated Calf Raise',detail:'Cible le soléaire en profondeur.'},
+         {rank:'🥉',nom:'Mollets Assis Haltères',machine:'Banc plat + haltères sur genoux',detail:'Assis — cible le soléaire. Fallback si les deux machines prises.'}],
+  'lb5':[{rank:'🥇',nom:'Mollets Assis Plate Loaded',machine:'Hammer Plate Loaded Seated Calf Raise',detail:'Machine dédiée soléaire. Complément parfait du mollet debout.'},
+         {rank:'🥈',nom:'Mollets Unilatéral Sur Marche',machine:'Bord de marche ou step',detail:'3×15 par jambe.'}],
+  'la7':[{rank:'🥇',nom:'Crunch Câble Poulie Haute À Genoux',machine:'Gym80 4012 Cable Crossover — corde, poulie haute',detail:'Même enroulement de colonne.'},
+         {rank:'🥈',nom:'Crunch Machine Allongé',machine:'Gym80 3034 Lying Abdominal Machine',detail:'Allongé — isolation abdos.'}],
+  'lb2':[{rank:'🥇',nom:'Box Step-Ups',machine:'Banc plat ou box dédié',detail:'Unilatéral pur. Renforcement quadriceps + stabilisation genoux.'}],
+  'lb6':[{rank:'🥇',nom:'Dead Bug',machine:'Tapis (sol)',detail:'3×15 alternées très lent. Même intention, plus accessible.'}],
+
+  // ── UPPER ──
+  'ua1':[{rank:'🥇',nom:'Tirage Vertical Prise Pronation Lourd',machine:'Gym80 4116 LAT PULL STATION',detail:'Même pattern, assisté. 3×6-8 lourd.'},
+         {rank:'🥈',nom:'Tractions Lestées',machine:'Sac lesté disponible en salle',detail:'Objectif long terme.'}],
+  'ub1':[{rank:'🥇',nom:'Tractions Prise Pronation',machine:'Gym80 3017 Kneeling/Chinning-Dipping Machine',detail:'Toujours prioritaire sur le long terme.'}],
+  'ua2':[{rank:'🥇',nom:'Développé Couché Iso-Latéral Allongé',machine:'Hammer ISO-Lateral Horizontal Bench Press',detail:'Version allongée — plus de force possible.'},
+         {rank:'🥈',nom:'Développé Couché Guidé Dual',machine:'Gym80 4364 Pure Kraft Bench Press Dual',detail:'Guidé dual — safe pour le coude.'}],
+  'ub2':[{rank:'🥇',nom:'Développé Guidé Dual',machine:'Gym80 4364 Pure Kraft Bench Press Dual',detail:'Revenir Option A si dispo.'}],
+  'ua3':[{rank:'🥇',nom:'Pullover Machine Gym80',machine:'Gym80 3012 Pull Over Machine',detail:'Bon substitut solide.'},
+         {rank:'🥈',nom:'Pullover Câble Bras Tendus',machine:'Gym80 4012 Cable Crossover — poulie haute',detail:'Tension constante sur le grand dorsal. Debout.'}],
+  'ub3':[{rank:'🥇',nom:'Pullover Machine Gym80',machine:'Gym80 3012 Pull Over Machine',detail:'Bon substitut solide.'},
+         {rank:'🥈',nom:'Pullover Câble Bras Tendus',machine:'Gym80 4012 Cable Crossover — poulie haute',detail:'Tension constante debout.'}],
+  'ua4':[{rank:'🥇',nom:'Dips Machine Plate Loaded',machine:'Hammer Strength Plate Loaded Seated Dip',detail:'Machine guidée plate loaded — trajectoire contrôlée. Plus safe pour le coude droit.'},
+         {rank:'🥈',nom:'Extension Triceps Machine Guidée',machine:'Gym80 3011 Triceps Extension Machine',detail:'Guidé — zéro contrainte articulaire. 3×12-15.'},
+         {rank:'🥉',nom:'Dips Lestés',machine:'Sac lesté + barres parallèles',detail:'Même règle sur la profondeur.'}],
+  'ub4':[{rank:'🥇',nom:'Dips Machine Plate Loaded',machine:'Hammer Strength Plate Loaded Seated Dip',detail:'Trajectoire contrôlée. Plus safe pour le coude droit.'},
+         {rank:'🥈',nom:'Extension Triceps Machine',machine:'Gym80 3011 Triceps Extension Machine',detail:'3×12-15. Guidé, zéro contrainte.'}],
+  'ua5':[{rank:'🥇',nom:'SUPERSET Câble : Latérales + Face Pull',machine:'Gym80 4012 Cable Crossover — poulie basse + corde haute',detail:'5A élévations câble bas / 5B face pull corde. Même logique, même muscles.'}],
+  'ub5':[{rank:'🥇',nom:'Revenir Option A — 3050 + 3025',machine:'Gym80 3050 + Gym80 3025',detail:'Plus isolé et plus lourd.'}],
+  'ua6':[{rank:'🥇',nom:'SUPERSET via Cable Crossover',machine:'Gym80 4012 Cable Crossover',detail:'Bayesian Curl + Extension overhead unilatérale sur câble classique.'},
+         {rank:'🥈',nom:'SUPERSET Haltères',machine:'Banc inclinable 60° + haltères',detail:'Curl incliné 60° pour chef long / Extension overhead haltère pour triceps.'}],
+  'ub6':[{rank:'🥇',nom:'SUPERSET Haltères',machine:'Banc inclinable 60° + haltères',detail:'Curl incliné + extension overhead haltère.'}],
+  'ua7':[{rank:'🥇',nom:'Farmer Carry',machine:'Haltères 30-40kg',detail:'2×30m en salle. Même effet grip + décompression active.'}],
+  'ub7':[{rank:'🥇',nom:'Farmer Carry',machine:'Haltères 30-40kg',detail:'2×30m. Grip + décompression active.'}]
+};
+
+function getSwapCandidates(exId){
+  return VARIANTES[exId]||[];
+}
+
+function showSwapPopup(exId){
+  var candidates=getSwapCandidates(exId);
+  var currentEx=null;
+  activeSession.opt.exercices.forEach(function(e){if(e.id===exId)currentEx=e;});
+  if(!currentEx)return;
+
+  var overlay=document.createElement('div');
+  overlay.className='hist-overlay';
+  overlay.id='swap-overlay-ref';
+  overlay.onclick=function(e){if(e.target===overlay)closeSwapPopup();};
+
+  var candidateRows=candidates.length===0
+    ? '<div style="text-align:center;padding:16px 0;font-size:12px;color:#52525b">Aucune variante disponible pour cet exercice</div>'
+    : candidates.map(function(c,i){
+        return '<div onclick="confirmSwap(\''+exId+'\','+i+')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #1e1e22;background:#0d0d0f;margin-bottom:6px;cursor:pointer">'
+          +'<span style="font-size:16px;flex-shrink:0;margin-top:1px">'+c.rank+'</span>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:600;color:#f4f4f5;line-height:1.3">'+c.nom+'</div>'
+          +'<div style="font-size:10px;color:#3f3f46;margin-top:2px;font-style:italic">'+c.machine+'</div>'
+          +'<div style="font-size:11px;color:#71717a;margin-top:4px;line-height:1.4">'+c.detail+'</div>'
+          +'</div>'
+          +'<span style="font-size:11px;color:#3f3f46;flex-shrink:0;margin-top:3px">→</span>'
+          +'</div>';
+      }).join('');
+
+  overlay.innerHTML='<div class="hist-sheet">'
+    +'<div class="hist-handle"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div>'
+    +'<div style="font-size:13px;font-weight:700;color:#f4f4f5">Variantes disponibles</div>'
+    +'<div style="font-size:10px;color:#52525b;margin-top:2px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+currentEx.nom+'</div>'
+    +'</div>'
+    +'<button onclick="closeSwapPopup()" style="background:#1a1a1d;border:1px solid #2a2a2e;border-radius:8px;padding:5px 10px;color:#71717a;font-size:11px;cursor:pointer;font-family:inherit">✕</button>'
+    +'</div>'
+    +candidateRows
+    +'</div>';
+
+  document.body.appendChild(overlay);
+}
+
+function closeSwapPopup(){
+  var o=document.getElementById('swap-overlay-ref');
+  if(o)o.remove();
+}
+
+function confirmSwap(exId, varIdx){
+  closeSwapPopup();
+  var candidates=getSwapCandidates(exId);
+  var chosen=candidates[varIdx];
+  if(!chosen)return;
+
+  // Trouver l'index du slot dans la session
+  var slotIdx=activeSession.opt.exercices.findIndex(function(e){return e.id===exId;});
+  if(slotIdx<0)return;
+
+  // Créer un objet exercice minimal basé sur la variante, en conservant les paramètres clés de l'original
+  var origEx=activeSession.opt.exercices[slotIdx];
+  var newId='swap_'+exId+'_'+varIdx;
+  var newEx={
+    id:newId,
+    nom:chosen.nom,
+    machine:chosen.machine,
+    series:origEx.series,
+    repsTarget:origEx.repsTarget,
+    reposSec:origEx.reposSec,
+    tempo:origEx.tempo,
+    isForce:origEx.isForce,
+    notes:chosen.detail,
+    badge:origEx.badge
+  };
+
+  // Remplacer dans la session
+  activeSession.opt.exercices[slotIdx]=newEx;
+  activeSession.order[activeSession.order.indexOf(exId)]=newId;
+
+  // Init données si besoin
+  if(!sessData[newId]){
+    sessData[newId]={sets:initSets(newEx),memo:'',timerSec:newEx.reposSec||60};
+  }
+
+  // Préserver l'état ouvert
+  if(sessExOpen[exId]){sessExOpen[newId]=true;delete sessExOpen[exId];}
+
+  renderSessView();
+}
+
+function startSession(seanceId,optKey){
+  var seance=getSeance(seanceId);
+  var opt=seance.options.find(function(o){return o.key===optKey;});
+  activeSession={seance:seance,opt:opt,order:opt.exercices.map(function(ex){return ex.id;})};
+  sessData={};
+  sessExOpen={};
+  sessExDetail={};
+  opt.exercices.forEach(function(ex){
+    var sets=initSets(ex);
+    // Mode deload : supprimer le dernier set de travail
+    if(deloadMode){
+      var workSetsIdx=sets.map(function(s,i){return s.type!=='R'?i:-1;}).filter(function(i){return i>=0;});
+      if(workSetsIdx.length>1)sets.splice(workSetsIdx[workSetsIdx.length-1],1);
+    }
+    // Pré-remplissage : récupérer la dernière session pour cet exercice
+    var lastData=getLastSetsData(ex.id);
+    if(lastData&&lastData.sets){
+      var lastWork=lastData.sets.filter(function(s){return s.type!=='R'&&s.done&&s.poids&&s.reps;});
+      var workIdx=0;
+      sets.forEach(function(s){
+        if(s.type!=='R'&&lastWork[workIdx]){
+          var p=parseFloat(lastWork[workIdx].poids)||0;
+          // Mode deload : 60% arrondi au 0.5 près
+          if(deloadMode) p=Math.round(p*0.6*2)/2;
+          s.poids=p>0?String(p):'';
+          s.reps=lastWork[workIdx].reps;
+          workIdx++;
+        }
+      });
+    }
+    sessData[ex.id]={sets:sets,memo:'',timerSec:ex.reposSec||60};
+  });
+  sessExOpen[opt.exercices[0].id]=true;
+  sessElapsed=0;
+  sessMemo='';
+  sessPRs={};
+  Object.values(activeTimers).forEach(function(t){clearInterval(t.interval);});
+  activeTimers={};
+  if(sessTimer)clearInterval(sessTimer);
+  renderSessView();
+  startSessTimer();
+}
+
+function finishSession(){
+  if(sessTimer)clearInterval(sessTimer);
+  Object.values(activeTimers).forEach(function(t){clearInterval(t.interval);});
+  activeTimers={};
+  var opt=activeSession.opt;
+  var exs=activeSession.order.map(function(id){return opt.exercices.find(function(ex){return ex.id===id;});});
+  var totalSets=0,doneSets=0;
+  Object.values(sessData).forEach(function(d){totalSets+=d.sets.length;doneSets+=d.sets.filter(function(s){return s.done;}).length;});
+  var sess={
+    id:'s'+Date.now(),date:nowISO(),
+    seanceId:activeSession.seance.id,optKey:opt.key,optLabel:opt.label,
+    tag:activeSession.seance.tag,focus:activeSession.seance.focus,couleur:activeSession.seance.couleur,
+    duration:sessElapsed,memo:sessMemo,
+    exercises:exs.map(function(ex){return{id:ex.id,nom:ex.nom,series:ex.series,data:sessData[ex.id]};}),
+    totalSets:doneSets,completed:doneSets===totalSets,
+    prs:Object.values(sessPRs),
+    deload:deloadMode
+  };
+  DB.unshift(sess);
+  saveDB();
+  activeSession=null;
+  currentTab='dash';
+  render();
+}
+
+function cancelSession(){
+  if(sessTimer)clearInterval(sessTimer);
+  Object.values(activeTimers).forEach(function(t){clearInterval(t.interval);});
+  activeTimers={};
+  activeSession=null;
+  render();
+}
+
+// ═══ RENDER SESSION ═══
+function renderSessView(){
+  var app=document.getElementById('app');
+  if(!app||!activeSession)return;
+  var seance=activeSession.seance;
+  var opt=activeSession.opt;
+  var order=activeSession.order;
+  var exs=order.map(function(id){return opt.exercices.find(function(ex){return ex.id===id;});});
+  var allSets=Object.values(sessData).reduce(function(a,d){return a+d.sets.length;},0);
+  var doneSets=Object.values(sessData).reduce(function(a,d){return a+d.sets.filter(function(s){return s.done;}).length;},0);
+  var mm=Math.floor(sessElapsed/60000),ss=Math.floor((sessElapsed%60000)/1000);
+  // Grouper les exercices en supersets (badge SS consécutifs)
+  var groups=[];
+  var i=0;
+  while(i<exs.length){
+    var ex=exs[i];
+    if(ex&&ex.badge==='SS'&&exs[i+1]&&exs[i+1].badge==='SS'){
+      groups.push({type:'superset',exs:[ex,exs[i+1]]});
+      i+=2;
+    }else{
+      groups.push({type:'single',ex:ex});
+      i++;
+    }
+  }
+  var exsHtml=groups.map(function(g,gi){
+    if(g.type==='single')return renderSessEx(g.ex,gi,groups.length);
+    // Superset : wrapper visuel + timer partagé
+    var ssTimerSec=Math.max(g.exs[0].reposSec||60,g.exs[1].reposSec||60);
+    // Trouver le timer partagé actif (on utilise l'id du 2e exo comme clé timer)
+    var ssTimerId='ss_'+g.exs[0].id+'_'+g.exs[1].id;
+    var ssTimer=activeTimers[ssTimerId];
+    var ssRem=ssTimer?ssTimer.rem:ssTimerSec;
+    var ssMins=Math.floor(ssRem/60),ssSecs=ssRem%60;
+    var ssActive=!!ssTimer;
+    var ssDone=g.exs.every(function(e){var d=sessData[e.id];return d&&d.sets.filter(function(s){return s.type!=='W'||s.done;}).length===d.sets.length;});
+    return '<div style="border:1px solid rgba(251,191,36,0.3);border-radius:12px;background:rgba(251,191,36,0.03);overflow:hidden;display:flex;flex-direction:column;gap:0">'
+      +'<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid rgba(251,191,36,0.1)">'
+      +'<span style="font-size:10px;color:#fbbf24;font-weight:700;letter-spacing:0.05em">⚡ SUPERSET</span>'
+      +'<span style="font-size:9px;color:#52525b">— Enchaîner sans repos</span>'
+      +'<div style="margin-left:auto;display:flex;align-items:center;gap:6px">'
+      +'<div class="timer-inner" style="cursor:pointer;border-color:'+(ssActive?'#fbbf24':'#2a2a2e')+';background:'+(ssActive?'rgba(251,191,36,0.08)':'#111113')+'" onclick="toggleSSTimer(\''+ssTimerId+'\','+ssTimerSec+')" id="ss-timer-'+ssTimerId+'">'
+      +'<span style="font-size:11px;font-family:monospace;font-weight:700;color:'+(ssActive?'#fbbf24':'#52525b')+'">'+String(ssMins).padStart(2,'0')+':'+String(ssSecs).padStart(2,'0')+'</span>'
+      +'<span style="font-size:8px;color:'+(ssActive?'#fbbf24':'#3f3f46')+'">REPOS</span>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+      +g.exs.map(function(ex,ei){return renderSessEx(ex,gi*2+ei,exs.length);}).join('')
+      +'</div>';
+  }).join('');
+  app.innerHTML='<div class="sess-header">'
+    +'<div style="max-width:600px;margin:0 auto">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<button class="btn-outline" onclick="cancelSession()">✕</button>'
+    +'<span style="font-size:13px;font-weight:700;color:'+seance.couleur+'">'+seance.tag+'</span>'
+    +'<span style="font-size:11px;color:#52525b">· Option '+opt.label+'</span>'
+    +'</div>'
+    +'<div style="font-family:monospace;font-size:13px;font-weight:700;color:#71717a" id="sess-elapsed">'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0')+'</div>'
+    +'</div>'
+    +'<div class="progress-bar"><div class="progress-fill" id="sess-prog-fill" style="width:'+(allSets>0?doneSets/allSets*100:0)+'%;background:'+seance.couleur+'"></div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:4px">'
+    +'<span style="font-size:9px;color:#3f3f46" id="sess-sets-cnt">'+doneSets+'/'+allSets+' séries</span>'
+    +'<span style="font-size:9px;color:#3f3f46">'+Math.round(allSets>0?doneSets/allSets*100:0)+'%</span>'
+    +'</div></div></div>'
+    +'<div style="max-width:600px;margin:0 auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px">'
+    +exsHtml
+    +'<div class="card card-pad" style="margin-top:4px">'
+    +'<div class="section-label">Mémo séance</div>'
+    +'<textarea placeholder="Ressenti, conditions, charge globale..." rows="2" onchange="sessMemo=this.value">'+sessMemo+'</textarea>'
+    +'</div>'
+    +'<button id="finish-btn" class="btn btn-primary" style="background:'+seance.couleur+';margin-top:2px" onclick="finishSession()">Terminer · '+doneSets+'/'+allSets+' séries'+(Object.keys(sessPRs).length>0?' · '+Object.keys(sessPRs).length+' 🏆':'')+'</button>'
+    +'</div>';
+}
+
+// ═══ RENDER VIEWS ═══
+function renderDash(){
+  var seance=getSeance(dashDay);
+  var opt=seance.options[dashOptIdx];
+  var wk=new Date();wk.setDate(wk.getDate()-wk.getDay()+1);wk.setHours(0,0,0,0);
+  var wSess=DB.filter(function(s){return new Date(s.date)>=wk;});
+  var avg=DB.length>0?DB.reduce(function(a,s){return a+(s.duration||0);},0)/DB.length:0;
+  var pbs={};
+  DB.forEach(function(s){(s.exercises||[]).forEach(function(ex){(ex.data&&ex.data.sets||[]).filter(function(st){return st.done&&st.poids&&st.reps&&st.type!=='R';}).forEach(function(st){var v=parseFloat(st.poids)*parseFloat(st.reps);if(!pbs[ex.nom]||v>pbs[ex.nom].vol)pbs[ex.nom]={poids:st.poids,reps:st.reps,vol:v,date:s.date};});});});
+  var recent=DB.slice(0,4);
+
+  var dayTabs=SEANCES.map(function(s){var a=dashDay===s.id;return '<button class="tag-tab" style="border-color:'+(a?s.couleur+'40':'#1a1a1d')+';background:'+(a?s.couleur+'0c':'transparent')+'" onclick="setDashDay(\''+s.id+'\')">'
+    +'<div style="font-size:9px;font-family:monospace;font-weight:700;color:'+s.couleur+'">'+s.tag+'</div>'
+    +'<div style="font-size:9px;color:#52525b;margin-top:2px">'+s.jour+'</div>'
+    +'</button>';}).join('');
+
+  var optTabs=seance.options.map(function(o,i){var a=dashOptIdx===i;return '<button class="opt-tab" style="border-color:'+(a?o.color+'40':'#1a1a1d')+';background:'+(a?o.color+'0c':'transparent')+'" onclick="setDashOpt('+i+')">'
+    +'<div style="font-size:10px;font-weight:700;color:'+o.color+'">Option '+o.label+'</div>'
+    +'</button>';}).join('');
+
+  var weekCells=SEANCES.map(function(s){var done=wSess.some(function(w){return w.seanceId===s.id;});return '<div class="week-cell" style="border-color:'+(done?s.couleur+'35':'#1a1a1d')+';background:'+(done?s.couleur+'08':'transparent')+'">'
+    +'<div style="font-size:8px;font-family:monospace;font-weight:700;color:'+(done?s.couleur:'#3f3f46')+'">'+s.tag+'</div>'
+    +'<div style="font-size:9px;color:#3f3f46;margin-top:2px">'+s.jour+'</div>'
+    +(done?'<div style="font-size:9px;color:'+s.couleur+';margin-top:2px">✓</div>':'')
+    +'</div>';}).join('');
+
+  var pbsHtml=Object.keys(pbs).length>0?'<div class="card card-pad"><div class="section-label">Records personnels</div>'
+    +Object.entries(pbs).slice(0,5).map(function(entry){var nom=entry[0],pb=entry[1];return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#111113;margin-bottom:4px">'
+      +'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#e4e4e7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nom+'</div>'
+      +'<div style="font-size:9px;color:#3f3f46">'+fmtDate(pb.date)+'</div></div>'
+      +'<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-family:monospace;font-weight:700;color:#fbbf24">'+pb.poids+' kg</div>'
+      +'<div style="font-size:9px;color:#52525b">× '+pb.reps+' reps</div></div>'
+      +'</div>';}).join('')+'</div>':'';
+
+  var recentHtml=recent.length===0?'<div style="text-align:center;padding:16px 0"><div style="font-size:24px;margin-bottom:4px">💪</div><div style="font-size:11px;color:#52525b">Lance ta première séance !</div></div>'
+    :recent.map(function(s){return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid #1a1a1d;border-left:3px solid '+s.couleur+';background:#111113;margin-bottom:4px">'
+      +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px">'
+      +'<span style="font-size:12px;font-weight:700;color:'+s.couleur+'">'+s.tag+'</span>'
+      +'<span style="font-size:11px;color:#71717a">Opt '+s.optLabel+'</span>'
+      +(s.completed?'<span class="pill" style="background:rgba(34,197,94,0.1);color:#4ade80;border-color:rgba(34,197,94,0.2)">✓</span>':'')
+      +'</div><div style="font-size:9px;color:#3f3f46;margin-top:1px">'+s.focus+'</div></div>'
+      +'<div style="text-align:right;flex-shrink:0"><div style="font-size:10px;color:#71717a">'+fmtDate(s.date)+'</div>'
+      +'<div style="font-size:9px;color:#3f3f46">'+fmtDur(s.duration)+'</div></div>'
+      +'</div>';}).join('');
+
+  var deloadBanner=deloadMode
+    ?'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);margin-bottom:10px">'
+    +'<span style="font-size:18px">🔄</span>'
+    +'<div style="flex:1"><div style="font-size:11px;font-weight:700;color:#fbbf24">Mode Deload actif</div>'
+    +'<div style="font-size:9px;color:#a16207;margin-top:1px">Charges à 60% · −1 série · Timer désactivé · SNC au repos</div></div>'
+    +'<button onclick="deloadMode=false;render()" style="padding:5px 10px;border-radius:7px;border:1px solid rgba(251,191,36,0.3);background:transparent;color:#fbbf24;font-size:10px;cursor:pointer;font-family:inherit">Désactiver</button>'
+    +'</div>'
+    :'';
+
+  return '<div class="content">'
+    +deloadBanner
+    +'<div class="grid3" style="margin-bottom:10px">'
+    +'<div class="stat-card"><div style="font-size:22px;font-weight:700;font-family:monospace;color:#4ade80;line-height:1">'+wSess.length+'</div><div style="font-size:9px;color:#52525b;margin-top:4px">Cette semaine</div></div>'
+    +'<div class="stat-card"><div style="font-size:22px;font-weight:700;font-family:monospace;color:#60a5fa;line-height:1">'+DB.length+'</div><div style="font-size:9px;color:#52525b;margin-top:4px">Total</div></div>'
+    +'<div class="stat-card"><div style="font-size:22px;font-weight:700;font-family:monospace;color:#facc15;line-height:1">'+(avg>0?fmtDur(avg):'—')+'</div><div style="font-size:9px;color:#52525b;margin-top:4px">Durée moy.</div></div>'
+    +'</div>'
+    +'<div class="card card-pad" style="margin-bottom:10px"><div class="section-label">Semaine type</div>'
+    +'<div class="week-grid">'+weekCells+'</div></div>'
+    +'<div class="card card-pad" style="margin-bottom:10px"><div class="section-label">Lancer une séance</div>'
+    +'<div class="flex gap4" style="margin-bottom:6px">'+dayTabs+'</div>'
+    +'<div class="flex gap4" style="margin-bottom:8px">'+optTabs+'</div>'
+    +'<div style="padding:9px 11px;border-radius:9px;border:1px solid #1a1a1d;border-left:3px solid '+seance.couleur+';margin-bottom:8px">'
+    +'<div style="font-size:11px;font-weight:600;color:#e4e4e7">'+seance.tag+' · '+seance.focus+'</div>'
+    +'<div style="font-size:9px;color:#3f3f46;margin-top:2px">'+opt.exercices.length+' exercices · '+seance.focus+'</div>'
+    +'</div>'
+    +'<button class="btn btn-primary" style="background:'+seance.couleur+'" onclick="startSession(\''+dashDay+'\',\''+opt.key+'\')">Lancer '+seance.tag+' Option '+opt.label+(deloadMode?' 🔄':'')+'</button>'
+    +'<button onclick="deloadMode=!deloadMode;render()" style="width:100%;margin-top:6px;padding:9px;border-radius:9px;border:1px solid '+(deloadMode?'rgba(251,191,36,0.3)':'#1a1a1d')+';background:'+(deloadMode?'rgba(251,191,36,0.08)':'transparent')+';color:'+(deloadMode?'#fbbf24':'#52525b')+';font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">'+(deloadMode?'🔄 Deload ON — désactiver':'🔄 Activer le mode Deload')+'</button>'
+    +'</div>'
+    +pbsHtml
+    +'<div class="card card-pad"><div class="section-label">Dernières séances</div>'+recentHtml+'</div>'
+    +'</div>';
+}
+
+function renderProg(){
+  var seance=getSeance(progDay);
+  var opt=seance.options[progOptIdx[progDay]];
+  var dayTabs=SEANCES.map(function(s){var a=progDay===s.id;return '<button class="tag-tab" style="border-color:'+(a?s.couleur+'40':'#1a1a1d')+';background:'+(a?s.couleur+'0c':'transparent')+'" onclick="setProgDay(\''+s.id+'\')">'
+    +'<div style="font-size:9px;font-family:monospace;font-weight:700;color:'+s.couleur+'">'+s.tag+'</div>'
+    +'<div style="font-size:9px;color:#52525b;margin-top:2px">'+s.jour+'</div>'
+    +'</button>';}).join('');
+  var optTabs=seance.options.map(function(o,i){var a=progOptIdx[progDay]===i;return '<button class="opt-tab" style="border-color:'+(a?o.color+'40':'#1a1a1d')+';background:'+(a?o.color+'0c':'transparent')+'" onclick="setProgOpt('+i+')">'
+    +'<div style="font-size:10px;font-weight:700;color:'+o.color+'">Option '+o.label+'</div>'
+    +'</button>';}).join('');
+  var exsHtml=opt.exercices.map(function(ex){
+    var open=exOpen['prog-'+ex.id];
+    var bst=ex.badge&&BADGE_COLORS[ex.badge]?BADGE_COLORS[ex.badge]:null;
+    var rampHtml=ex.isForce?'<div style="display:flex;gap:3px;margin-bottom:6px">'
+      +'<div class="ramp-cell"><div style="font-size:9px;font-family:monospace;font-weight:700;color:#fbbf24">R1</div><div style="font-size:7px;color:#a16207">12 reps</div></div>'
+      +'<div class="ramp-cell"><div style="font-size:9px;font-family:monospace;font-weight:700;color:#fbbf24">R2</div><div style="font-size:7px;color:#a16207">6 reps</div></div>'
+      +'<div class="ramp-cell"><div style="font-size:9px;font-family:monospace;font-weight:700;color:#fbbf24">R3</div><div style="font-size:7px;color:#a16207">2 reps</div></div>'
+      +'</div>':'';
+    return '<div class="ex-card" style="border-color:'+(ex.isForce?'rgba(251,191,36,0.15)':'#1a1a1d')+'">'
+      +'<div class="ex-header" onclick="toggleExOpen(\'prog-'+ex.id+'\')">'
+      +'<span style="font-size:9px;font-family:monospace;color:#3f3f46;width:18px;flex-shrink:0">'+ex.id.slice(-1)+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'
+      +'<span style="font-size:12px;font-weight:600;color:#f4f4f5">'+ex.nom+'</span>'
+      +(bst?'<span class="pill" style="background:'+bst.bg+';color:'+bst.color+';border-color:'+bst.border+'">'+ex.badge+'</span>':'')
+      +'</div>'
+      +'<div style="font-size:9px;color:#3f3f46;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ex.machine+'</div>'
+      +'</div>'
+      +'<div style="font-size:11px;font-family:monospace;color:'+opt.color+';flex-shrink:0">'+ex.series+'×'+ex.repsTarget+'</div>'
+      +'<span style="font-size:9px;color:#2a2a2e;display:inline-block;transform:'+(open?'rotate(180deg)':'rotate(0deg)')+';transition:transform 0.2s">▼</span>'
+      +'</div>'
+      +(open?'<div class="ex-body">'
+        +rampHtml
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+        +[['Séries',String(ex.series)],['Reps',ex.repsTarget],['Tempo',ex.tempo],['Repos',ex.reposSec+'s']].map(function(it){return '<div style="display:flex;gap:4px;align-items:center;font-size:10px"><span style="color:#3f3f46">'+it[0]+'</span><span style="font-family:monospace;font-weight:700;color:#d4d4d8;background:#111113;padding:2px 6px;border-radius:5px">'+it[1]+'</span></div>';}).join('')
+        +'</div>'
+        +(ex.notes?'<div style="font-size:10px;color:#52525b;line-height:1.5;margin-bottom:6px">'+ex.notes+'</div>':'')
+        +(VARIANTES[ex.id]&&VARIANTES[ex.id].length>0
+          ? '<div style="border-top:1px solid #1a1a1d;padding-top:8px;margin-top:2px">'
+            +'<div style="font-size:9px;font-weight:700;color:#52525b;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:6px">◈ Variantes si machine prise</div>'
+            +VARIANTES[ex.id].map(function(v){
+              return '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:8px;background:#0d0d0f;border:1px solid #1a1a1d;margin-bottom:4px">'
+                +'<span style="font-size:13px;flex-shrink:0;margin-top:1px">'+v.rank+'</span>'
+                +'<div style="flex:1;min-width:0">'
+                +'<div style="font-size:11px;font-weight:600;color:#e4e4e7;line-height:1.3">'+v.nom+'</div>'
+                +'<div style="font-size:9px;color:#3f3f46;font-style:italic;margin-top:1px">'+v.machine+'</div>'
+                +'<div style="font-size:10px;color:#71717a;margin-top:3px;line-height:1.4">'+v.detail+'</div>'
+                +'</div>'
+                +'</div>';
+            }).join('')
+            +'</div>'
+          : '')
+        +'</div>':'')
+      +'</div>';
+  }).join('');
+  return '<div class="content">'
+    +'<div class="flex gap4" style="margin-bottom:8px">'+dayTabs+'</div>'
+    +'<div style="margin-bottom:7px;padding:9px 11px;border-radius:9px;border:1px solid #1a1a1d;background:rgba(18,18,22,0.6);border-left:3px solid '+seance.couleur+'">'
+    +'<div style="font-size:11px;font-weight:600;color:#e4e4e7">'+seance.focus+'</div></div>'
+    +'<div class="flex gap4" style="margin-bottom:12px">'+optTabs+'</div>'
+    +exsHtml
+    +'<button class="btn btn-primary" style="background:'+seance.couleur+';margin-top:8px" onclick="startSession(\''+progDay+'\',\''+opt.key+'\')">Lancer '+seance.tag+' Option '+opt.label+'</button>'
+    +'</div>';
+}
+
+function renderSearch(){
+  var all=[];
+  SEANCES.forEach(function(s){s.options.forEach(function(o){o.exercices.forEach(function(ex){all.push(Object.assign({},ex,{seanceTag:s.tag,seanceCouleur:s.couleur,seanceId:s.id,optColor:o.color,optLabel:o.label}));});});});
+  var results=searchQ.length>=2?all.filter(function(ex){
+    var hay=[ex.nom,ex.machine,ex.notes||''].join(' ').toLowerCase();
+    var mq=hay.indexOf(searchQ.toLowerCase())>=0;
+    var mt=searchFilt==='all'||ex.seanceId===searchFilt;
+    return mq&&mt;
+  }).filter(function(e,i,a){return a.findIndex(function(x){return x.nom===e.nom&&x.seanceId===e.seanceId&&x.optLabel===e.optLabel;})===i;}).slice(0,20):[];
+  var filterHtml=['all','lundi','mercredi','vendredi','samedi'].map(function(id){
+    var labels={all:'Tout',lundi:'PULL',mercredi:'PUSH',vendredi:'LOWER',samedi:'UPPER'};
+    var a=searchFilt===id;
+    return '<button onclick="setSearchFilt(\''+id+'\')" style="padding:4px 9px;border-radius:999px;border:1px solid '+(a?'#3f3f46':'#1a1a1d')+';background:'+(a?'rgba(63,63,70,0.25)':'transparent')+';font-size:10px;font-weight:600;color:'+(a?'#d4d4d8':'#52525b')+';cursor:pointer;font-family:inherit">'+labels[id]+'</button>';
+  }).join('');
+  var resultsHtml=searchQ.length<2?'<div style="text-align:center;padding:28px 0"><div style="font-size:24px;margin-bottom:6px">🔍</div><div style="font-size:11px;color:#52525b">Tape un exercice ou une machine...</div></div>'
+    :'<div style="font-size:9px;color:#3f3f46;margin-bottom:4px">'+results.length+' résultat'+(results.length!==1?'s':'')+'</div>'
+    +(results.length===0?'<div style="text-align:center;padding:20px 0;font-size:11px;color:#52525b">Aucun résultat</div>'
+    :results.map(function(ex){var bst=ex.badge&&BADGE_COLORS[ex.badge]?BADGE_COLORS[ex.badge]:null;return '<div style="border-radius:10px;border:1px solid #1a1a1d;background:#0d0d0f;padding:10px 12px;margin-bottom:5px">'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
+      +'<span class="pill" style="background:'+ex.seanceCouleur+'18;color:'+ex.seanceCouleur+';border-color:'+ex.seanceCouleur+'40">'+ex.seanceTag+'</span>'
+      +'<span style="font-size:8px;color:#3f3f46">Opt '+ex.optLabel+'</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">'
+      +'<span style="font-size:12px;font-weight:600;color:#f4f4f5">'+ex.nom+'</span>'
+      +(bst?'<span class="pill" style="background:'+bst.bg+';color:'+bst.color+';border-color:'+bst.border+'">'+ex.badge+'</span>':'')
+      +'</div>'
+      +'<div style="font-size:9px;color:#3f3f46;margin-bottom:2px">'+ex.machine+'</div>'
+      +'<div style="display:flex;gap:8px"><span style="font-size:10px;font-family:monospace;color:#71717a">'+ex.series+'×'+ex.repsTarget+'</span><span style="font-size:10px;color:#3f3f46">'+ex.tempo+'</span></div>'
+      +(ex.notes?'<div style="font-size:9px;color:#52525b;margin-top:3px;line-height:1.4">'+ex.notes+'</div>':'')
+      +'</div>';}).join(''));
+  return '<div class="content">'
+    +'<div style="position:relative;margin-bottom:7px">'
+    +'<input type="text" value="'+searchQ+'" placeholder="Exercice, machine, note..." class="search-input" oninput="setSearch(this.value)" style="padding-right:'+(searchQ?'34px':'12px')+'">'
+    +(searchQ?'<button onclick="setSearch(\'\')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#3f3f46;cursor:pointer;font-size:14px">×</button>':'')
+    +'</div>'
+    +'<div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">'+filterHtml+'</div>'
+    +resultsHtml+'</div>';
+}
+
+function renderGuide(){
+  var tabs=['cmd','feu','vol'].map(function(id){var labels={cmd:'Commandements',feu:'Feu Vert',vol:'Volume'};return '<button class="guide-tab'+(guideTab===id?' active':'')+'" onclick="setGuideTab(\''+id+'\')">'+labels[id]+'</button>';}).join('');
+  var content='';
+  if(guideTab==='cmd'){content=COMMANDEMENTS.map(function(c){return '<div class="cmd-card">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+    +'<span style="font-size:16px">'+c.icon+'</span>'
+    +'<span style="font-size:9px;font-family:monospace;color:#3f3f46">'+c.num+'</span>'
+    +'<span style="font-size:12px;font-weight:700;color:#fde68a">'+c.title+'</span>'
+    +'</div>'
+    +'<p style="font-size:11px;color:#71717a;line-height:1.6;margin:0">'+c.detail+'</p>'
+    +'</div>';}).join('');}
+  if(guideTab==='feu'){content=FEU.map(function(z){return '<div class="feu-card" style="border:1px solid '+z.border+';background:'+z.bg+'">'
+    +'<div style="font-size:11px;font-weight:700;color:'+z.color+';margin-bottom:8px">'+z.label+'</div>'
+    +z.items.map(function(item){return '<div style="font-size:11px;color:#71717a;margin-bottom:5px;display:flex;gap:5px"><span style="color:#2a2a2e;flex-shrink:0">›</span><span>'+item+'</span></div>';}).join('')
+    +'</div>';}).join('')
+    +'<div style="padding:10px 12px;border-radius:10px;background:#0d0d0f;border:1px solid #1a1a1d">'
+    +'<p style="font-size:10px;color:#52525b;line-height:1.6;margin:0;font-style:italic">💡 Pour l\'ectomorphe, le sommeil est l\'outil de prise de masse n°1. Nuit trop courte = plus de progrès perdus qu\'une séance ratée n\'en crée.</p>'
+    +'</div>';}
+  if(guideTab==='vol'){
+    var maxVol=0; VOL.forEach(function(r){var t=r.PULL+r.PUSH+r.LOWER+r.UPPER;if(t>maxVol)maxVol=t;});
+    var legend=Object.entries(TAG_COLORS).map(function(e){return '<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:2px;background:'+e[1]+'"></div><span style="font-size:9px;color:#52525b">'+e[0]+'</span></div>';}).join('');
+    content='<div style="font-size:9px;color:#3f3f46;margin-bottom:4px">Séries effectives / muscle / semaine. Objectif hypertrophie : 10-20 séries.</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">'+legend+'</div>'
+      +VOL.map(function(row){
+        var total=row.PULL+row.PUSH+row.LOWER+row.UPPER;
+        var icon=total>=16?'🔥':total>=10?'💪':total>=6?'👍':'📌';
+        var segs=['PULL','PUSH','LOWER','UPPER'].map(function(tag){var val=row[tag];if(!val)return '';return '<div class="vol-seg" style="background:'+TAG_COLORS[tag]+';width:'+(val/maxVol*100)+'%"></div>';}).join('');
+        return '<div style="margin-bottom:4px">'
+          +'<div style="display:flex;justify-content:space-between;margin-bottom:2px">'
+          +'<span style="font-size:10px;color:#d4d4d8">'+row.m+'</span>'
+          +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">'+icon+'</span><span style="font-size:9px;font-family:monospace;color:#71717a">'+total+'s/sem</span></div>'
+          +'</div>'
+          +'<div class="vol-bar">'+segs+(total===0?'<div style="height:100%;border-radius:2px;background:#1e1e22;flex:1"></div>':'')+'</div>'
+          +'</div>';
+      }).join('');}
+  return '<div class="content"><div class="guide-tabs">'+tabs+'</div>'+content+'</div>';
+}
+
+function renderCal(){
+  var fd=(new Date(calYear,calMonth,1).getDay()+6)%7;
+  var days=new Date(calYear,calMonth+1,0).getDate();
+  var today=todayStr();
+  var bd={};DB.forEach(function(s){var d=s.date.slice(0,10);if(!bd[d])bd[d]=[];bd[d].push(s);});
+  var ml=new Date(calYear,calMonth).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  var cells='';
+  for(var i=0;i<fd;i++)cells+='<div></div>';
+  for(var d=1;d<=days;d++){
+    var ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var ss=bd[ds]||[];var isT=ds===today;
+    cells+='<div class="cal-cell" style="border:1px solid '+(isT?'#3f3f46':ss.length?'#1e1e22':'transparent')+';background:'+(isT?'rgba(63,63,70,0.2)':ss.length?'#0d0d0f':'rgba(12,12,14,0.4)')+';cursor:'+(ss.length?'pointer':'default')+'" '+(ss.length?'onclick="viewSession(\''+ss[0].id+'\')"':'')+' >'
+      +'<div style="font-size:10px;font-family:monospace;text-align:right;color:'+(isT?'#fff':'#3f3f46')+';font-weight:'+(isT?700:400)+';margin-bottom:2px">'+d+'</div>'
+      +ss.slice(0,2).map(function(s){return '<div style="border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:'+s.couleur+'15;color:'+s.couleur+'">'+s.tag+'</div>';}).join('')
+      +(ss.length>2?'<div style="font-size:8px;color:#3f3f46">+'+( ss.length-2)+'</div>':'')
+      +'</div>';
+  }
+  var legend=SEANCES.map(function(s){return '<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:2px;background:'+s.couleur+'"></div><span style="font-size:9px;color:#52525b">'+s.tag+'</span></div>';}).join('');
+  return '<div class="content">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<button onclick="moveCal(-1)" style="padding:5px 10px;border-radius:7px;border:1px solid #1a1a1d;background:transparent;color:#71717a;cursor:pointer;font-size:13px">←</button>'
+    +'<span style="font-size:13px;font-weight:600;color:#e4e4e7;text-transform:capitalize">'+ml+'</span>'
+    +'<button onclick="moveCal(1)" style="padding:5px 10px;border-radius:7px;border:1px solid #1a1a1d;background:transparent;color:#71717a;cursor:pointer;font-size:13px">→</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px">'
+    +['L','M','M','J','V','S','D'].map(function(d){return '<div style="text-align:center;font-size:9px;color:#3f3f46;padding:3px 0;font-weight:600">'+d+'</div>';}).join('')
+    +'</div>'
+    +'<div class="cal-grid">'+cells+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'+legend+'</div>'
+    +'</div>';
+}
+
+function getStreak(){
+  // Nombre de semaines consécutives avec 3+ séances (en partant de la semaine la plus récente)
+  if(DB.length===0)return 0;
+  // Grouper les sessions par semaine ISO (lundi = début)
+  var weeks={};
+  DB.forEach(function(s){
+    var d=new Date(s.date);
+    var day=d.getDay();var diff=(day+6)%7;
+    var mon=new Date(d);mon.setDate(d.getDate()-diff);mon.setHours(0,0,0,0);
+    var key=mon.toISOString().slice(0,10);
+    if(!weeks[key])weeks[key]=0;
+    weeks[key]++;
+  });
+  var sorted=Object.keys(weeks).sort().reverse();
+  var streak=0;
+  var now=new Date();var day=now.getDay();var diff=(day+6)%7;
+  var curMon=new Date(now);curMon.setDate(now.getDate()-diff);curMon.setHours(0,0,0,0);
+  for(var i=0;i<sorted.length;i++){
+    var wk=new Date(sorted[i]);
+    var expectedMon=new Date(curMon);expectedMon.setDate(curMon.getDate()-7*i);
+    if(Math.abs(wk-expectedMon)>86400000*2)break;// tolérance 2j
+    if(weeks[sorted[i]]>=3)streak++;
+    else break;
+  }
+  return streak;
+}
+
+function renderHist(){
+  if(DB.length===0)return '<div class="content" style="text-align:center;padding:60px 0"><div style="font-size:30px;margin-bottom:6px">📋</div><div style="font-size:12px;color:#52525b">Aucune séance enregistrée</div></div>';
+  var streak=getStreak();
+  var streakHtml=streak>0
+    ?'<div class="card card-pad" style="margin-bottom:10px;display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:24px">🔥</span>'
+      +'<div><div style="font-size:18px;font-weight:700;font-family:monospace;color:#fb923c;line-height:1">'+streak+' sem.</div>'
+      +'<div style="font-size:9px;color:#52525b;margin-top:2px">Streak — 3+ séances/sem. consécutives</div></div>'
+      +'</div>'
+    :'';
+  return '<div class="content">'
+    +streakHtml
+    +DB.map(function(s){
+      var prsHtml='';
+      if(s.prs&&s.prs.length>0){
+        prsHtml='<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:4px">'
+          +'<span style="font-size:9px">🏆</span>'
+          +s.prs.map(function(pr){return '<span style="font-size:9px;color:#fbbf24;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);padding:1px 5px;border-radius:4px">'+pr.nom+' '+pr.poids+'kg</span>';}).join('')
+          +'</div>';
+      }
+      return '<div style="border-radius:10px;border:1px solid #1a1a1d;border-left:3px solid '+s.couleur+';background:#0d0d0f;overflow:hidden;margin-bottom:5px">'
+        +'<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer" onclick="viewSession(\''+s.id+'\')">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:center;gap:6px">'
+        +'<span style="font-size:12px;font-weight:700;color:'+s.couleur+'">'+s.tag+'</span>'
+        +'<span style="font-size:11px;color:#71717a">Opt '+s.optLabel+'</span>'
+        +(s.completed?'<span class="pill" style="background:rgba(34,197,94,0.1);color:#4ade80;border-color:rgba(34,197,94,0.2)">✓</span>':'')
+        +(s.deload?'<span class="pill" style="background:rgba(251,191,36,0.1);color:#fbbf24;border-color:rgba(251,191,36,0.2)">🔄 Deload</span>':'')
+        +'</div>'
+        +(s.memo?'<div style="font-size:9px;color:#52525b;font-style:italic;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">"'+s.memo+'"</div>':'')
+        +prsHtml
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="font-size:10px;color:#71717a">'+fmtDate(s.date)+'</div>'
+        +'<div style="font-size:9px;color:#3f3f46">'+fmtDur(s.duration)+' · '+s.totalSets+'s</div>'
+        +'</div></div>'
+        +(confirmDel===s.id
+          ?'<div style="display:flex;align-items:center;gap:6px;padding:0 12px 10px">'
+          +'<span style="font-size:11px;color:#71717a;flex:1">Supprimer ?</span>'
+          +'<button onclick="delSession(\''+s.id+'\')" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid rgba(239,68,68,0.25);background:rgba(239,68,68,0.1);color:#f87171;cursor:pointer;font-family:inherit">Oui</button>'
+          +'<button onclick="confirmDel=null;render()" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid #1a1a1d;background:transparent;color:#52525b;cursor:pointer;font-family:inherit">Non</button>'
+          +'</div>'
+          :'<div style="padding:0 12px 6px"><button onclick="event.stopPropagation();confirmDel=\''+s.id+'\';render()" style="font-size:9px;color:#2a2a2e;background:none;border:none;cursor:pointer;padding:0;font-family:inherit">🗑 Supprimer</button></div>')
+        +'</div>';
+    }).join('')
+    +'</div>';
+}
+
+function renderSessDetail(s){
+  var app=document.getElementById('app');
+  var exsHtml=(s.exercises||[]).map(function(ex,i){
+    var ds=ex.data&&ex.data.sets?ex.data.sets.filter(function(st){return st.done;}):[]; var isO=exOpen['detail-'+i];
+    return '<div style="border-radius:9px;border:1px solid #1a1a1d;border-left:3px solid '+(ds.length>=ex.series?'#22c55e':'#1e1e22')+';background:#0d0d0f;overflow:hidden;margin-bottom:5px">'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer" onclick="toggleExOpen(\'detail-'+i+'\')">'
+      +'<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#e4e4e7">'+ex.nom+'</div></div>'
+      +'<div style="font-size:11px;font-family:monospace;font-weight:700;color:'+(ds.length>=ex.series?'#22c55e':'#52525b')+'">'+ds.length+'/'+ex.series+'</div>'
+      +'<span style="font-size:9px;color:#2a2a2e;display:inline-block;transform:'+(isO?'rotate(180deg)':'rotate(0deg)')+';transition:transform 0.2s">▼</span>'
+      +'</div>'
+      +(isO?'<div style="border-top:1px solid #1a1a1d;padding:8px 12px">'
+        +(ds.length===0?'<p style="font-size:11px;color:#3f3f46;margin:0;font-style:italic">Aucune série</p>'
+        :ds.map(function(st,j){return '<div class="detail-row" style="background:'+(st.type==='R'?'rgba(251,191,36,0.06)':'#111113')+'">'
+          +'<span style="font-size:9px;font-family:monospace;color:'+(st.type==='R'?'#fbbf24':'#3f3f46')+';width:18px">'+(st.type==='R'?'R'+(j+1):j+1)+'</span>'
+          +'<span style="font-family:monospace;font-weight:700;color:#f4f4f5;font-size:12px">'+(st.poids||'—')+' kg</span>'
+          +'<span style="color:#2a2a2e">×</span>'
+          +'<span style="font-family:monospace;font-weight:700;color:#f4f4f5;font-size:12px">'+(st.reps||'—')+' reps</span>'
+          +'</div>';}).join(''))
+        +(ex.data&&ex.data.memo?'<p style="font-size:10px;color:#52525b;margin:4px 0 0;font-style:italic">"'+ex.data.memo+'"</p>':'')
+        +'</div>':'')
+      +'</div>';
+  }).join('');
+  app.innerHTML='<div class="sess-header">'
+    +'<div style="max-width:600px;margin:0 auto;display:flex;align-items:center;gap:10px">'
+    +'<button class="btn-outline" onclick="viewingSession=null;render()">← Retour</button>'
+    +'<span style="font-size:13px;font-weight:700;color:'+s.couleur+'">'+s.tag+'</span>'
+    +'<span style="font-size:12px;color:#71717a">Option '+s.optLabel+'</span>'
+    +'<div style="margin-left:auto;text-align:right">'
+    +'<div style="font-size:11px;color:#a1a1aa">'+fmtDate(s.date)+'</div>'
+    +'<div style="font-size:9px;color:#3f3f46">'+fmtDur(s.duration)+'</div>'
+    +'</div></div></div>'
+    +'<div style="max-width:600px;margin:0 auto;padding:12px 14px">'
+    +(s.memo?'<div class="card card-pad" style="margin-bottom:6px"><div class="section-label">Mémo</div><p style="font-size:12px;color:#71717a;line-height:1.5;margin:0">'+s.memo+'</p></div>':'')
+    +exsHtml+'</div>';
+}
+
+// ═══ ACTIONS ═══
+function switchTab(t){currentTab=t;render();}
+function toggleExOpen(id){exOpen[id]=!exOpen[id];render();}
+function setDashDay(d){dashDay=d;dashOptIdx=0;render();}
+function setDashOpt(i){dashOptIdx=i;render();}
+function setProgDay(d){progDay=d;render();}
+function setProgOpt(i){progOptIdx[progDay]=i;render();}
+function setGuideTab(t){guideTab=t;render();}
+function setSearch(q){searchQ=q;render();}
+function setSearchFilt(f){searchFilt=f;render();}
+function moveCal(dir){calMonth+=dir;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}render();}
+function viewSession(id){viewingSession=DB.find(function(s){return s.id===id;});render();}
+function delSession(id){confirmDel=null;DB=DB.filter(function(s){return s.id!==id;});saveDB();render();}
+
+// ═══ EXPORT / IMPORT ═══
+function exportJSON(){
+  var payload={version:1,exportDate:nowISO(),appName:'On Air Chelles Training Log',sessions:DB};
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='onair_'+todayStr()+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+var importState={status:'idle',count:0,error:''};
+
+function triggerImport(){
+  var input=document.createElement('input');
+  input.type='file';
+  input.accept='.json,application/json';
+  input.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var data=JSON.parse(ev.target.result);
+        var sessions=data.sessions||data;
+        if(!Array.isArray(sessions))throw new Error('Format invalide');
+        importState={status:'confirm',count:sessions.length,pending:sessions,error:''};
+      }catch(err){
+        importState={status:'error',count:0,error:'Fichier invalide ou corrompu'};
+      }
+      render();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function confirmImport(){
+  if(!importState.pending)return;
+  DB=importState.pending;
+  saveDB();
+  importState={status:'success',count:DB.length,error:''};
+  render();
+}
+
+function cancelImport(){
+  importState={status:'idle',count:0,error:''};
+  render();
+}
+
+function renderParams(){
+  var lastDate=DB.length>0?fmtDate(DB[0].date):'—';
+  var totalVol=0;
+  DB.forEach(function(s){totalVol+=(s.totalSets||0);});
+
+  var importBlock='';
+  if(importState.status==='confirm'){
+    importBlock='<div style="border-radius:10px;border:1px solid rgba(251,146,60,0.3);background:rgba(251,146,60,0.06);padding:14px;margin-top:8px">'
+      +'<div style="font-size:12px;font-weight:700;color:#fb923c;margin-bottom:6px">⚠ Confirmer l\'import</div>'
+      +'<div style="font-size:11px;color:#a1a1aa;line-height:1.6;margin-bottom:10px">'
+      +importState.count+' séance'+(importState.count>1?'s':'')+' trouvée'+(importState.count>1?'s':'')+' dans le fichier.<br>'
+      +'<strong style="color:#f4f4f5">Attention :</strong> cela remplacera les '+DB.length+' séance'+(DB.length>1?'s':'')+' actuellement en base.'
+      +'</div>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="confirmImport()" style="flex:1;padding:9px;border-radius:9px;border:1px solid rgba(251,146,60,0.35);background:rgba(251,146,60,0.12);color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Confirmer l\'import</button>'
+      +'<button onclick="cancelImport()" style="padding:9px 14px;border-radius:9px;border:1px solid #2a2a2e;background:transparent;color:#52525b;font-size:12px;cursor:pointer;font-family:inherit">Annuler</button>'
+      +'</div></div>';
+  }else if(importState.status==='error'){
+    importBlock='<div style="border-radius:9px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);padding:10px;margin-top:8px;font-size:11px;color:#f87171">✕ '+importState.error+'</div>';
+  }else if(importState.status==='success'){
+    importBlock='<div style="border-radius:9px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);padding:10px;margin-top:8px;font-size:11px;color:#4ade80">✓ '+importState.count+' séance'+(importState.count>1?'s':'')+' importée'+(importState.count>1?'s':'')+' avec succès.</div>';
+  }
+
+  return '<div class="content">'
+    // — Stats bloc —
+    +'<div class="section-label" style="margin-bottom:6px">Base de données</div>'
+    +'<div class="card card-pad" style="margin-bottom:10px">'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center">'
+    +'<span style="font-size:12px;color:#71717a">Séances enregistrées</span>'
+    +'<span style="font-family:monospace;font-weight:700;font-size:14px;color:#f4f4f5">'+DB.length+'</span>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center">'
+    +'<span style="font-size:12px;color:#71717a">Séries totales</span>'
+    +'<span style="font-family:monospace;font-weight:700;font-size:14px;color:#f4f4f5">'+totalVol+'</span>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center">'
+    +'<span style="font-size:12px;color:#71717a">Dernière séance</span>'
+    +'<span style="font-size:12px;color:#a1a1aa">'+lastDate+'</span>'
+    +'</div>'
+    +'</div></div>'
+
+    // — Guide —
+    +'<div class="section-label" style="margin-bottom:6px">Guide du programme</div>'
+    +'<div class="card card-pad" style="margin-bottom:10px">'
+    +'<div style="font-size:12px;color:#71717a;line-height:1.6;margin-bottom:10px">Commandements, Feu Vert, Volume par muscle.</div>'
+    +'<button onclick="switchTab(\'guide\')" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(251,191,36,0.3);background:rgba(251,191,36,0.07);color:#fbbf24;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📖 Ouvrir le Guide</button>'
+    +'</div>'
+    +'<div class="section-label" style="margin-bottom:6px">Sauvegarde</div>'
+    +'<div class="card card-pad" style="margin-bottom:10px">'
+    +'<div style="font-size:12px;color:#71717a;line-height:1.6;margin-bottom:10px">'
+    +'Exporte toutes tes séances en fichier <span style="font-family:monospace;color:#a1a1aa">.json</span>. '
+    +'Garde une copie régulière pour ne rien perdre.'
+    +'</div>'
+    +'<button onclick="exportJSON()" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(74,222,128,0.3);background:rgba(74,222,128,0.08);color:#4ade80;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">↓ Exporter onair_'+todayStr()+'.json</button>'
+    +'</div>'
+
+    // — Import —
+    +'<div class="section-label" style="margin-bottom:6px">Restauration</div>'
+    +'<div class="card card-pad">'
+    +'<div style="font-size:12px;color:#71717a;line-height:1.6;margin-bottom:10px">'
+    +'Importe un fichier <span style="font-family:monospace;color:#a1a1aa">.json</span> exporté depuis cette app. '
+    +'<span style="color:#f87171">Remplace la base actuelle.</span>'
+    +'</div>'
+    +'<button onclick="triggerImport()" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.08);color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">↑ Importer un fichier JSON</button>'
+    +importBlock
+    +'</div>'
+    +'</div>';
+}
+
+// ═══ STATS ═══
+function setStatsEx(id){statsExId=id;render();}
+
+function getAllExercises(){
+  var seen={};var list=[];
+  SEANCES.forEach(function(s){s.options.forEach(function(o){o.exercices.forEach(function(ex){
+    if(!seen[ex.id]){seen[ex.id]=true;list.push({id:ex.id,nom:ex.nom,tag:s.tag,couleur:s.couleur});}
+  });});});
+  return list;
+}
+
+function getStatsForEx(exId){
+  // Retourne [{date, poidsMax, volumeTotal}] trié chronologiquement
+  var points=[];
+  DB.forEach(function(s){
+    var ex=s.exercises&&s.exercises.find(function(e){return e.id===exId;});
+    if(!ex||!ex.data||!ex.data.sets)return;
+    var ws=ex.data.sets.filter(function(st){return st.done&&st.type!=='R'&&st.poids&&st.reps;});
+    if(!ws.length)return;
+    var pMax=Math.max.apply(null,ws.map(function(st){return parseFloat(st.poids)||0;}));
+    var vol=ws.reduce(function(a,st){return a+(parseFloat(st.poids)||0)*(parseFloat(st.reps)||0);},0);
+    points.push({date:s.date,poidsMax:pMax,vol:Math.round(vol)});
+  });
+  points.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  return points;
+}
+
+function drawLineChart(points,key,color,W,H){
+  if(points.length===0)return '<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" fill="#3f3f46" font-size="11" font-family="system-ui">Pas encore de données</text>';
+  var pad={t:12,r:12,b:28,l:44};
+  var cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  var vals=points.map(function(p){return p[key];});
+  var minV=Math.min.apply(null,vals), maxV=Math.max.apply(null,vals);
+  if(minV===maxV){minV=Math.max(0,minV-5);maxV=maxV+5;}
+  var range=maxV-minV||1;
+
+  function px(i){return pad.l+i/(points.length-1||1)*cw;}
+  function py(v){return pad.t+ch-(v-minV)/range*ch;}
+
+  // Grid lines (3)
+  var gridHtml='';
+  for(var g=0;g<=3;g++){
+    var gv=minV+range*g/3;
+    var gy=pad.t+ch-ch*g/3;
+    var label=key==='vol'?(Math.round(gv/100)*100)+'':gv.toFixed(gv%1?1:0);
+    gridHtml+='<line x1="'+pad.l+'" y1="'+gy+'" x2="'+(pad.l+cw)+'" y2="'+gy+'" stroke="#1a1a1d" stroke-width="1"/>';
+    gridHtml+='<text x="'+(pad.l-5)+'" y="'+(gy+4)+'" text-anchor="end" fill="#3f3f46" font-size="9" font-family="monospace">'+label+'</text>';
+  }
+
+  // Area fill
+  var pts=points.map(function(p,i){return px(i)+','+py(p[key]);}).join(' ');
+  var areaD='M'+px(0)+','+py(points[0][key])+' '+points.map(function(p,i){return 'L'+px(i)+','+py(p[key]);}).join(' ')+' L'+px(points.length-1)+','+(pad.t+ch)+' L'+pad.l+','+(pad.t+ch)+' Z';
+  var lineD='M'+points.map(function(p,i){return px(i)+','+py(p[key]);}).join(' L');
+
+  // X axis dates (max 5 labels)
+  var xLabels='';
+  var step=Math.max(1,Math.floor(points.length/5));
+  for(var i=0;i<points.length;i+=step){
+    var d=new Date(points[i].date);
+    var lbl=(d.getDate())+'/'+(d.getMonth()+1);
+    xLabels+='<text x="'+px(i)+'" y="'+(H-6)+'" text-anchor="middle" fill="#3f3f46" font-size="9" font-family="monospace">'+lbl+'</text>';
+  }
+
+  // Dots + tooltips (last point highlighted)
+  var dots='';
+  points.forEach(function(p,i){
+    var isLast=(i===points.length-1);
+    var cx=px(i),cy=py(p[key]);
+    dots+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(isLast?4:2.5)+'" fill="'+(isLast?color:'#111113')+'" stroke="'+color+'" stroke-width="'+(isLast?0:1.5)+'"/>';
+    if(isLast){
+      var lbl=key==='vol'?p[key]+' kg·r':p[key]+' kg';
+      var tx=Math.min(cx+6, W-50);
+      dots+='<rect x="'+(tx-2)+'" y="'+(cy-16)+'" width="'+(lbl.length*6+6)+'" height="14" rx="3" fill="#111113" stroke="'+color+'" stroke-width="0.8" opacity="0.9"/>';
+      dots+='<text x="'+tx+'" y="'+(cy-6)+'" fill="'+color+'" font-size="9" font-family="monospace" font-weight="700">'+lbl+'</text>';
+    }
+  });
+
+  var gradId='grad_'+key;
+  return '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="'+color+'" stop-opacity="0.18"/>'
+    +'<stop offset="100%" stop-color="'+color+'" stop-opacity="0.02"/>'
+    +'</linearGradient></defs>'
+    +gridHtml
+    +'<path d="'+areaD+'" fill="url(#'+gradId+')" />'
+    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    +xLabels+dots;
+}
+
+function drawBarChart(points,W,H,color){
+  if(points.length===0)return '<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" fill="#3f3f46" font-size="11" font-family="system-ui">Pas encore de données</text>';
+  var pad={t:12,r:12,b:28,l:44};
+  var cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  var vals=points.map(function(p){return p.vol;});
+  var maxV=Math.max.apply(null,vals)||1;
+
+  var n=points.length;
+  var barW=Math.max(4,Math.floor(cw/n*0.6));
+  var gap=(cw-barW*n)/(n+1);
+
+  // Grid
+  var gridHtml='';
+  for(var g=0;g<=3;g++){
+    var gv=Math.round(maxV*g/3/100)*100;
+    var gy=pad.t+ch-ch*g/3;
+    gridHtml+='<line x1="'+pad.l+'" y1="'+gy+'" x2="'+(pad.l+cw)+'" y2="'+gy+'" stroke="#1a1a1d" stroke-width="1"/>';
+    gridHtml+='<text x="'+(pad.l-5)+'" y="'+(gy+4)+'" text-anchor="end" fill="#3f3f46" font-size="9" font-family="monospace">'+gv+'</text>';
+  }
+
+  var bars='';
+  var xLabels='';
+  var step=Math.max(1,Math.floor(n/5));
+  points.forEach(function(p,i){
+    var bh=Math.max(2,(p.vol/maxV)*ch);
+    var bx=pad.l+gap+(barW+gap)*i;
+    var by=pad.t+ch-bh;
+    var isLast=(i===n-1);
+    bars+='<rect x="'+bx+'" y="'+by+'" width="'+barW+'" height="'+bh+'" rx="2" fill="'+color+'" opacity="'+(isLast?1:0.45)+'"/>';
+    if(isLast){
+      bars+='<rect x="'+(bx-2)+'" y="'+(by-16)+'" width="'+(String(p.vol).length*6+10)+'" height="14" rx="3" fill="#111113" stroke="'+color+'" stroke-width="0.8" opacity="0.9"/>';
+      bars+='<text x="'+(bx+barW/2)+'" y="'+(by-6)+'" text-anchor="middle" fill="'+color+'" font-size="9" font-family="monospace" font-weight="700">'+p.vol+'</text>';
+    }
+    if(i%step===0){
+      var d=new Date(p.date);
+      xLabels+='<text x="'+(bx+barW/2)+'" y="'+(H-6)+'" text-anchor="middle" fill="#3f3f46" font-size="9" font-family="monospace">'+(d.getDate())+'/'+(d.getMonth()+1)+'</text>';
+    }
+  });
+
+  return gridHtml+bars+xLabels;
+}
+
+function renderStats(){
+  var allEx=getAllExercises();
+  if(!statsExId&&allEx.length>0)statsExId=allEx[0].id;
+
+  var selEx=allEx.find(function(e){return e.id===statsExId;})||allEx[0];
+  var points=statsExId?getStatsForEx(statsExId):[];
+
+  // Dropdown options
+  var opts=allEx.map(function(e){
+    return '<option value="'+e.id+'"'+(e.id===statsExId?' selected':'')+'>'+e.nom+'</option>';
+  }).join('');
+
+  var noData=points.length===0;
+  var W=540, H=140;
+
+  // Summary stats
+  var summary='';
+  if(points.length>0){
+    var poids=points.map(function(p){return p.poidsMax;});
+    var vols=points.map(function(p){return p.vol;});
+    var best=Math.max.apply(null,poids);
+    var last=points[points.length-1];
+    var first=points[0];
+    var trend=last.poidsMax-first.poidsMax;
+    var trendVol=last.vol-first.vol;
+    summary='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+      +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:#c084fc;line-height:1">'+best+'<span style="font-size:10px;color:#71717a"> kg</span></div><div style="font-size:9px;color:#52525b;margin-top:3px">Record poids</div></div>'
+      +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:#c084fc;line-height:1">'+points.length+'</div><div style="font-size:9px;color:#52525b;margin-top:3px">Séances</div></div>'
+      +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:'+(trend>=0?'#4ade80':'#f87171')+';line-height:1">'+(trend>=0?'+':'')+trend+'<span style="font-size:10px;color:#71717a"> kg</span></div><div style="font-size:9px;color:#52525b;margin-top:3px">Progression</div></div>'
+      +'</div>';
+  }
+
+  var chartHtml='';
+  if(noData){
+    chartHtml='<div class="card card-pad" style="text-align:center;padding:32px 0;margin-bottom:8px">'
+      +'<div style="font-size:22px;margin-bottom:6px">📊</div>'
+      +'<div style="font-size:12px;color:#52525b">Aucune donnée pour cet exercice.<br>Lance une séance pour commencer !</div>'
+      +'</div>';
+  } else {
+    chartHtml=''
+      // Courbe poids max
+      +'<div class="card" style="margin-bottom:8px">'
+      +'<div style="padding:10px 12px 4px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:10px;font-weight:700;color:#c084fc;text-transform:uppercase;letter-spacing:0.06em">Poids max · kg</span>'
+      +'<span style="font-size:9px;color:#3f3f46;font-family:monospace">par séance</span>'
+      +'</div>'
+      +'<div style="padding:0 8px 10px;overflow:hidden">'
+      +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
+      +drawLineChart(points,'poidsMax','#c084fc',W,H)
+      +'</svg></div></div>'
+      // Barres volume
+      +'<div class="card" style="margin-bottom:8px">'
+      +'<div style="padding:10px 12px 4px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:0.06em">Volume · kg·reps</span>'
+      +'<span style="font-size:9px;color:#3f3f46;font-family:monospace">par séance</span>'
+      +'</div>'
+      +'<div style="padding:0 8px 10px;overflow:hidden">'
+      +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
+      +drawBarChart(points,W,H,'#a78bfa')
+      +'</svg></div></div>';
+  }
+
+  return '<div class="content">'
+    +'<div class="section-label" style="margin-bottom:6px">Exercice</div>'
+    +'<div style="position:relative;margin-bottom:12px">'
+    +'<select onchange="setStatsEx(this.value)" style="width:100%;background:#0d0d0f;border:1px solid #1e1e22;border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;color:#f4f4f5;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;font-family:inherit">'
+    +opts
+    +'</select>'
+    +'<span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:#52525b;pointer-events:none">▼</span>'
+    +'</div>'
+    +summary
+    +chartHtml
+    +'</div>';
+}
+
+// ═══ MAIN RENDER ═══
+function render(){
+  var app=document.getElementById('app');
+  var cnt=document.getElementById('sess-count');
+  if(cnt)cnt.textContent=DB.length+' séance'+(DB.length!==1?'s':'');
+
+  if(activeSession){renderSessView();document.querySelector('.nav').style.display='none';return;}
+  document.querySelector('.nav').style.display='block';
+
+  if(viewingSession){renderSessDetail(viewingSession);return;}
+
+  var html='';
+  if(currentTab==='dash')html=renderDash();
+  else if(currentTab==='prog')html=renderProg();
+  else if(currentTab==='search')html=renderSearch();
+  else if(currentTab==='guide')html=renderGuide();
+  else if(currentTab==='cal')html=renderCal();
+  else if(currentTab==='hist')html=renderHist();
+  else if(currentTab==='stats')html=renderStats();
+  else if(currentTab==='params')html=renderParams();
+  app.innerHTML=html;
+
+  // Update nav
+  document.querySelectorAll('.nav-btn').forEach(function(btn){
+    var t=btn.getAttribute('data-tab');
+    btn.classList.toggle('active',t===currentTab);
+    var dot=document.getElementById('dot-'+t);
+    if(dot)dot.classList.toggle('hidden',t!==currentTab);
+  });
+}
+
+// ═══ INIT ═══
+// ═══ PWA INSTALL PROMPT ═══
+var deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  var banner=document.getElementById('pwa-install-banner');
+  if(banner)banner.style.display='flex';
+});
+window.addEventListener('appinstalled',function(){
+  deferredInstallPrompt=null;
+  var banner=document.getElementById('pwa-install-banner');
+  if(banner)banner.style.display='none';
+});
+function triggerInstall(){
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(function(r){
+    deferredInstallPrompt=null;
+    var banner=document.getElementById('pwa-install-banner');
+    if(banner)banner.style.display='none';
+  });
+}
+
+loadDB();
+</script>
+</body>
+</html>
