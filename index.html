@@ -244,6 +244,8 @@ var confirmDel = null;
 var statsExId = null;
 var sessPRs = {};
 var deloadMode = false; // Mode deload — charges à 60%, timer désactivé
+var histFilter = 'all';
+var vacOptIdx = 0;
 
 function getRecordPoids(exId){
   // Retourne le poids max historique pour cet exercice (hors session en cours)
@@ -260,14 +262,7 @@ function getRecordPoids(exId){
 
 // ═══ STORAGE ═══
 async function loadDB() {
-  try {
-    var r = localStorage.getItem('onair_hevy_v1');
-    var parsed = r ? JSON.parse(r) : [];
-    DB = Array.isArray(parsed) ? parsed : [];
-  } catch(e) {
-    DB = [];
-    console.error('Données locales corrompues, réinitialisation:', e);
-  }
+  try { var r = localStorage.getItem('onair_hevy_v1'); DB = r ? JSON.parse(r) : []; } catch(e) { DB = []; }
   render();
 }
 async function saveDB() {
@@ -306,11 +301,11 @@ var SEANCES = [
     ]},
     {key:'C',label:'C',color:'#fbbf24',exercices:[
       {id:'pc1',nom:'Rowing Unilatéral',machine:'Hammer ISO-Lateral Row',series:3,repsTarget:'6-8',reposSec:180,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · Gauche en premier',badge:'FORCE'},
+      {id:'pc4',nom:'Curl Biceps Bras Frais',machine:'Hammer Seated Biceps',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE · placé tôt pour bras frais',badge:'ASYM'},
       {id:'pc2',nom:'Tirage Vertical Prise Large',machine:'Gym80 4116',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · Épaules basses'},
       {id:'pc3',nom:'Rowing Câble Bas MAG Grip',machine:'Gym80 4016 — poulie basse',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Écraser les omoplates 2s'},
-      {id:'pc4',nom:'Curl Biceps SOLO bras frais',machine:'Hammer Seated Biceps',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE · avant superset',badge:'ASYM'},
-      {id:'pc5',nom:'Face Pull ⚡ → Curl Marteau',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'15',reposSec:0,tempo:'2-0-1-2',isForce:false,notes:'Enchaîner avec Curl Marteau',badge:'SS'},
-      {id:'pc6',nom:'Curl Marteau Câble ⚡',machine:'Gym80 4012 — poulie basse',series:3,repsTarget:'10-12',reposSec:75,tempo:'3-0-1-1',isForce:false,notes:'75s repos après ce bloc',badge:'SS'},
+      {id:'pc5',nom:'Face Pull',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Coudes très ouverts'},
+      {id:'pc6',nom:'Curl Marteau Câble',machine:'Gym80 4012 — poulie basse',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'SANGLES INTERDITES'},
       {id:'pc7',nom:'Hyperextensions',machine:'Station 45°',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-2-0',isForce:false,notes:'Regard au sol'}
     ]}
   ]},
@@ -335,11 +330,11 @@ var SEANCES = [
     ]},
     {key:'C',label:'C',color:'#fbbf24',exercices:[
       {id:'puc1',nom:'Développé Couché Barre',machine:'Banc + Eleiko',series:3,repsTarget:'5-7',reposSec:180,tempo:'3-0-1-0',isForce:true,notes:'RAMPING · coude droit soigné',badge:'FORCE'},
+      {id:'puc5',nom:'Latérales Bras Frais',machine:'Gym80 4012 — poulie basse',series:4,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Placé tôt · priorité deltoïde médial V-Shape'},
       {id:'puc2',nom:'Développé Incliné Dual 30°',machine:'Gym80 4365',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-0',isForce:false,notes:'LOI DU GAUCHE · 30° max'},
       {id:'puc3',nom:'Développé Épaules Dual',machine:'Gym80 4363',series:3,repsTarget:'8-10',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Dos plaqué · LOI DU GAUCHE'},
       {id:'puc4',nom:'Écarté Câble Art',machine:'Gym80 5103',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s'},
-      {id:'puc5',nom:'Latérales ⚡ → Extension',machine:'Gym80 4012 — poulie basse',series:4,repsTarget:'12-15',reposSec:0,tempo:'2-0-1-1',isForce:false,notes:'Enchaîner avec Extension Triceps',badge:'SS'},
-      {id:'puc6',nom:'Extension Triceps ⚡',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'60s repos après ce bloc',badge:'SS'},
+      {id:'puc6',nom:'Extension Triceps Poulie',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'Coudes collés aux côtes'},
       {id:'puc7',nom:'Relevés de Jambes',machine:'Gym80 4170 Tour',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Enrouler le bassin',badge:'ABS'}
     ]}
   ]},
@@ -351,7 +346,8 @@ var SEANCES = [
       {id:'la4',nom:'Presse à Cuisses',machine:'Gym80 3030',series:3,repsTarget:'12-15',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Pieds largeur de bassin'},
       {id:'la5',nom:'Leg Extension',machine:'Gym80 3001',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Contraction 2s en haut'},
       {id:'la6',nom:'Mollets Debout',machine:'Gym80 3018',series:4,repsTarget:'20',reposSec:45,tempo:'2-2-1-0',isForce:false,notes:'Pause STRICTE 2s en bas'},
-      {id:'la7',nom:'Crunch Machine',machine:'Gym80 3008',series:3,repsTarget:'20',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Pas le Hammer Oblique Crunch',badge:'ABS'}
+      {id:'la7',nom:'Crunch Machine',machine:'Gym80 3008',series:3,repsTarget:'20',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Focus enroulement colonne',badge:'ABS'},
+      {id:'la8',nom:'Rotation Obliques Câble',machine:'Gym80 4012 — poulie moyenne',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Rotation contrôlée · charge modérée, pas maximale',badge:'ABS'}
     ]},
     {key:'B',label:'B',color:'#fb923c',exercices:[
       {id:'lb1',nom:'Belt Squat',machine:'Gym80 4360',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Zéro charge sur la colonne'},
@@ -359,7 +355,8 @@ var SEANCES = [
       {id:'lb3',nom:'Hip Thrust Guidé',machine:'Hammer Glute Drive',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s en haut'},
       {id:'lb4',nom:'Leg Curl Assis',machine:'Gym80 3003',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Contraction 2s en bas'},
       {id:'lb5',nom:'Mollets Debout',machine:'Gym80 3018',series:3,repsTarget:'20',reposSec:45,tempo:'2-2-1-0',isForce:false,notes:'Pause 2s en bas'},
-      {id:'lb6',nom:'Hollow Body Hold',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Dos plaqué 100% au sol'}
+      {id:'lb6',nom:'Hollow Body Hold',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Dos plaqué 100% au sol'},
+      {id:'lb7',nom:'Rotation Obliques Câble',machine:'Gym80 4012 — poulie moyenne',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Rotation contrôlée · charge modérée',badge:'ABS'}
     ]}
   ]},
   {id:'samedi',tag:'UPPER',jour:'SAM',couleur:'#60a5fa',focus:'Volume · Densité · Congestion',options:[
@@ -370,7 +367,8 @@ var SEANCES = [
       {id:'ua4',nom:'Dips Poids de Corps',machine:'Barres parallèles',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Buste penché · arrêt strict parallèle'},
       {id:'ua5',nom:'SS Latérales + Butterfly Rev',machine:'Gym80 3050 + Gym80 3025',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Pas de repos entre 5A et 5B',badge:'SS'},
       {id:'ua6',nom:'SS Bayesian + Extension OH',machine:'Gym80 5104 Cable Art',series:3,repsTarget:'12',reposSec:75,tempo:'2-0-1-1',isForce:false,notes:'LOI DU GAUCHE STRICTE · 1 série bonus G',badge:'SS'},
-      {id:'ua7',nom:'Dead Hang',machine:'Gym80 4170 Tour',series:2,repsTarget:'MAX',reposSec:60,tempo:'Statique',isForce:false,notes:'SANGLES INTERDITES · décompression colonne',badge:'FIN'}
+      {id:'ua7',nom:'Dead Hang',machine:'Gym80 4170 Tour',series:2,repsTarget:'MAX',reposSec:60,tempo:'Statique',isForce:false,notes:'SANGLES INTERDITES · décompression colonne',badge:'FIN'},
+      {id:'ua8',nom:'Planche Gainage',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Corps aligné, pas de creux lombaire · gainage global',badge:'ABS'}
     ]},
     {key:'B',label:'B',color:'#a78bfa',exercices:[
       {id:'ub1',nom:'Tirage Vertical Lourd',machine:'Gym80 4116',series:3,repsTarget:'6-8',reposSec:120,tempo:'3-0-1-1',isForce:true,notes:'SANGLES',badge:'FORCE'},
@@ -379,16 +377,50 @@ var SEANCES = [
       {id:'ub4',nom:'Dips Poids de Corps',machine:'Barres parallèles',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Buste penché · arrêt strict parallèle'},
       {id:'ub5',nom:'SS Latérales + Face Pull',machine:'Gym80 4012',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Pas de repos entre 5A et 5B',badge:'SS'},
       {id:'ub6',nom:'SS Bayesian + Extension OH',machine:'Gym80 5104 ou 4012',series:3,repsTarget:'12',reposSec:75,tempo:'2-0-1-1',isForce:false,notes:'LOI DU GAUCHE STRICTE',badge:'SS'},
-      {id:'ub7',nom:'Dead Hang',machine:'Gym80 4170 Tour',series:2,repsTarget:'MAX',reposSec:60,tempo:'Statique',isForce:false,notes:'SANGLES INTERDITES',badge:'FIN'}
+      {id:'ub7',nom:'Dead Hang',machine:'Gym80 4170 Tour',series:2,repsTarget:'MAX',reposSec:60,tempo:'Statique',isForce:false,notes:'SANGLES INTERDITES',badge:'FIN'},
+      {id:'ub8',nom:'Planche Gainage',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Corps aligné, pas de creux lombaire · gainage global',badge:'ABS'}
     ]}
   ]}
 ];
+
+// ═══ SÉANCES VACANCES — Kit élastiques 120kg + poids de corps ═══
+var VACANCES_SEANCES = {
+  id:'vacances',tag:'VACANCES',jour:'',couleur:'#22d3ee',focus:'Full body · Kit élastiques + poids de corps',
+  options:[
+    {key:'A',label:'A',color:'#22d3ee',sublabel:'Push dominant',exercices:[
+      {id:'va1',nom:'Développé Couché Élastiques',machine:'Élastiques au sol + poignées',series:3,repsTarget:'10-15',reposSec:90,tempo:'2-0-1-1',isForce:false,notes:'Bandes ancrées sous le dos'},
+      {id:'va2',nom:'Pompes',machine:'Poids de corps (lestées si besoin)',series:3,repsTarget:'MAX',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Variante si Développé Couché trop facile'},
+      {id:'va3',nom:'Développé Épaules Debout',machine:'Élastiques sous les pieds + poignées',series:3,repsTarget:'12-15',reposSec:90,tempo:'2-0-1-1',isForce:false,notes:'Dos droit, gainage actif'},
+      {id:'va4',nom:'Dips Chaise/Banc',machine:'Poids de corps',series:3,repsTarget:'10-15',reposSec:60,tempo:'2-0-1-0',isForce:false,notes:'Coudes proches du corps'},
+      {id:'va5',nom:'Extension Triceps',machine:'Ancrage porte haut + corde/poignée',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Coudes fixes'},
+      {id:'va6',nom:'Squat Élastiques + Barre',machine:'Bandes sous les pieds + barre sur épaules',series:3,repsTarget:'15-20',reposSec:90,tempo:'2-0-1-1',isForce:false,notes:'Amplitude complète'},
+      {id:'va7',nom:'Planche',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Corps aligné',badge:'ABS'}
+    ]},
+    {key:'B',label:'B',color:'#67e8f9',sublabel:'Pull dominant',exercices:[
+      {id:'vb1',nom:'Rowing Horizontal Élastiques',machine:'Ancrage porte + poignées',series:3,repsTarget:'12-15',reposSec:90,tempo:'2-0-1-1',isForce:false,notes:'Tirage vers le nombril'},
+      {id:'vb2',nom:'Tirage Vertical Élastiques',machine:'Ancrage porte XL en hauteur + barre',series:3,repsTarget:'12-15',reposSec:90,tempo:'2-0-1-1',isForce:false,notes:'Descendre jusqu\'au menton'},
+      {id:'vb3',nom:'Superman',machine:'Poids de corps — sol',series:3,repsTarget:'15',reposSec:45,tempo:'2-0-1-1',isForce:false,notes:'Extension dos contrôlée'},
+      {id:'vb4',nom:'Curl Biceps Élastiques',machine:'Bandes sous les pieds + barre',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Coudes fixes'},
+      {id:'vb5',nom:'Fentes Arrière',machine:'Sangle cheville ou bande sous pied avant',series:3,repsTarget:'12/jambe',reposSec:90,tempo:'2-0-1-0',isForce:false,notes:'LOI DU GAUCHE',badge:'ASYM'},
+      {id:'vb6',nom:'Face Pull Élastiques',machine:'Ancrage porte à hauteur visage',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Coudes ouverts'}
+    ]},
+    {key:'C',label:'C',color:'#a5f3fc',sublabel:'Full body',exercices:[
+      {id:'vc1',nom:'Squat + Press Combiné',machine:'Élastiques sous les pieds + poignées',series:3,repsTarget:'12-15',reposSec:90,tempo:'2-0-1-1',isForce:false,notes:'Mouvement enchaîné, explosif en montée'},
+      {id:'vc2',nom:'Rowing Unilatéral Élastiques',machine:'Ancrage fixe + poignée',series:3,repsTarget:'12/bras',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'LOI DU GAUCHE',badge:'ASYM'},
+      {id:'vc3',nom:'Squats/Fentes Sautées',machine:'Poids de corps',series:3,repsTarget:'12-15',reposSec:60,tempo:'Explosif',isForce:false,notes:'Si articulations ok, sinon version non sautée'},
+      {id:'vc4',nom:'Élévations Latérales Élastiques',machine:'Bandes sous les pieds + poignées',series:3,repsTarget:'15-20',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Arrêt à la parallèle'},
+      {id:'vc5',nom:'Extension Jambe Sangle',machine:'Sangle cheville + ancrage bas',series:3,repsTarget:'15/jambe',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Contrôlé, pas d\'à-coups'},
+      {id:'vc6',nom:'Pont Fessier Élastiques',machine:'Bande autour des genoux',series:3,repsTarget:'15-20',reposSec:45,tempo:'2-0-1-2',isForce:false,notes:'Squeeze 2s en haut'},
+      {id:'vc7',nom:'Gainage Complet',machine:'Sol — planche + latéral + superman',series:2,repsTarget:'Enchaînement',reposSec:45,tempo:'Statique',isForce:false,notes:'2 tours, 20-30s par position',badge:'ABS'}
+    ]}
+  ]
+};
 
 var COMMANDEMENTS = [
   {num:'01',icon:'⏱',title:'Tempo Strict',detail:'3-0-1-1 → 3s descente / pause / 1s explosion / 1s contraction. TUT = facteur n°1 d\'hypertrophie.'},
   {num:'02',icon:'◀',title:'Loi du Gauche',detail:'Gauche commence toujours sur l\'unilatéral. 1 série bonus uniquement à Gauche à la fin des iso-latéraux bras.'},
   {num:'03',icon:'📈',title:'Ramping de Force',detail:'Exo n°1 : 3 séries montantes (12/6/2 reps) puis 3 séries de travail effectives.'},
-  {num:'04',icon:'◇',title:'Zéro Obliques',detail:'Interdiction de charger les obliques. V-Shape de face. Hammer Oblique Crunch interdit.'}
+  {num:'04',icon:'◇',title:'Corps Équilibré',detail:'V-Shape recherché sans délaisser aucun groupe musculaire — obliques inclus, avec modération.'}
 ];
 
 var FEU = [
@@ -411,7 +443,8 @@ var VOL = [
   {m:'Ischio-jambiers', PULL:0,  PUSH:0, LOWER:6, UPPER:0},
   {m:'Fessiers',        PULL:0,  PUSH:0, LOWER:7, UPPER:0},
   {m:'Mollets',         PULL:0,  PUSH:0, LOWER:4, UPPER:0},
-  {m:'Abdominaux',      PULL:0,  PUSH:3, LOWER:3, UPPER:0}
+  {m:'Abdominaux',      PULL:0,  PUSH:3, LOWER:3, UPPER:0},
+  {m:'Obliques',        PULL:0,  PUSH:0, LOWER:3, UPPER:0}
 ];
 
 // ═══ HELPERS ═══
@@ -425,7 +458,7 @@ function initSets(ex){
   if(ex.isForce)return[makeSet('R'),makeSet('R'),makeSet('R'),makeSet('W'),makeSet('W'),makeSet('W')];
   return Array.from({length:ex.series},function(){return makeSet('W');});
 }
-function getSeance(id){return SEANCES.find(function(s){return s.id===id;});}
+function getSeance(id){if(id==='vacances')return VACANCES_SEANCES;return SEANCES.find(function(s){return s.id===id;});}
 function getOpt(seance,key){return seance.options.find(function(o){return o.key===key;});}
 
 // ═══ BADGE ═══
@@ -646,6 +679,7 @@ function renderSessEx(ex,idx,total){
     +'</div>'
     +'<div style="font-size:13px;font-family:monospace;font-weight:700;color:'+(allDone?'#22c55e':activeSession.opt.color)+'">'+doneSets+'/'+workSets.length+'</div>'
     +'<button onclick="event.stopPropagation();showSwapPopup(\''+ex.id+'\')" style="width:26px;height:26px;border-radius:7px;border:1px solid #1e1e22;background:#111113;color:#52525b;font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center" title="Changer exercice">⇄</button>'
+    +'<button onclick="event.stopPropagation();removeExFromSession(\''+ex.id+'\')" style="width:26px;height:26px;border-radius:7px;border:1px solid #1e1e22;background:#111113;color:#3f3f46;font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center" title="Retirer">🗑</button>'
     +'</div>'
     +(isOpen?'<div style="border-top:1px solid #1a1a1d;padding:10px 12px;display:flex;flex-direction:column;gap:8px" id="sess-ex-body-'+ex.id+'">'
       +(lastStr?'<div style="font-size:10px;color:#3f3f46;font-family:monospace">Dernière fois : <span style="color:#71717a">'+lastStr+'</span></div>':'')
@@ -883,9 +917,12 @@ var VARIANTES = {
          {rank:'🥈',nom:'Curl Pupitre Supination',machine:'Support biceps assis + Haltère',detail:'Banc pupitre + haltère. Même cible chef court. Loi du Gauche.'},
          {rank:'🥉',nom:'Curl Incliné Haltère Supination',machine:'Banc inclinable 60°',detail:'Bras pendants derrière le dossier.'}],
   'pa6':[{rank:'🥇',nom:'Curl Marteau Câble',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'Tension constante sur tout le mouvement. Debout.'},
-         {rank:'🥈',nom:'Zottman Curl',machine:'Haltères — assis sur banc',detail:'Montée supination, descente pronation lente 3s. Biceps + brachioradial.'}],
-  'pb6':[{rank:'🥇',nom:'Curl Marteau Haltères Assis',machine:'Haltères — assis sur banc',detail:'Assis sur banc, dos droit.'}],
-  'pc6':[{rank:'🥇',nom:'Curl Marteau Haltères Assis',machine:'Haltères — assis sur banc',detail:'Assis sur banc, dos droit.'}],
+         {rank:'🥈',nom:'Curl Marteau Corde',machine:'Gym80 4012 Cable Crossover — corde double, poulie basse',detail:'Tension constante + prise corde qui suit naturellement la rotation neutre. Excellent maintien de tension en haut de mouvement.'},
+         {rank:'🥉',nom:'Zottman Curl',machine:'Haltères — assis sur banc',detail:'Montée supination, descente pronation lente 3s. Biceps + brachioradial.'}],
+  'pb6':[{rank:'🥇',nom:'Curl Marteau Corde',machine:'Gym80 4012 Cable Crossover — corde double, poulie basse',detail:'Meilleure tension en fin de mouvement que l\'haltère classique.'},
+         {rank:'🥈',nom:'Curl Marteau Haltères Assis',machine:'Haltères — assis sur banc',detail:'Assis sur banc, dos droit.'}],
+  'pc6':[{rank:'🥇',nom:'Curl Marteau Corde',machine:'Gym80 4012 Cable Crossover — corde double, poulie basse',detail:'Meilleure tension en fin de mouvement que l\'haltère classique.'},
+         {rank:'🥈',nom:'Curl Marteau Haltères Assis',machine:'Haltères — assis sur banc',detail:'Assis sur banc, dos droit.'}],
   'pa7':[{rank:'🥇',nom:'Machine Lombaires',machine:'Gym80 3007 Lower Back Machine',detail:'Machine guidée — même cible. Plus sécurisé si lombaires sensibles.'},
          {rank:'🥈',nom:'Good Morning Barre Légère',machine:'Rack Eleiko — barre fixe 10kg',detail:'Buste à 90°, renforcement chaîne postérieure.'}],
   'pb7':[{rank:'🥇',nom:'Machine Lombaires',machine:'Gym80 3007 Lower Back Machine',detail:'Plus sécurisé si lombaires sensibles.'}],
@@ -935,8 +972,9 @@ var VARIANTES = {
   'la2':[{rank:'🥇',nom:'Squat Machine Guidé',machine:'Gym80 4038 Pure Kraft Squat Machine',detail:'Squat guidé — descente 4s maintenue.'},
          {rank:'🥈',nom:'Belt Squat',machine:'Gym80 4360 Pure Kraft Belt Squat',detail:'Zéro charge sur la colonne. Premium si lombaires sensibles.'}],
   'lb1':[{rank:'🥇',nom:'Goblet Squat',machine:'Kettlebell ou haltère lourd',detail:'Charge sur l\'avant = dos droit naturel. Zéro compression.'}],
-  'la3':[{rank:'🥇',nom:'Hip Thrust Guidé',machine:'Hammer Plate Loaded Glute Drive',detail:'Fessiers et chaîne postérieure sans compression colonne.'},
-         {rank:'🥈',nom:'Pull-Through Câble',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'RDL avec tension constante, zéro charge axiale.'}],
+  'la3':[{rank:'🥇',nom:'RDL Barre Trap (Hex Bar)',machine:'Barre Trap/Hex + disques',detail:'Répartit mieux la charge que l\'haltère, réduit le stress lombaire. Meilleur choix force+masse si disponible en salle.'},
+         {rank:'🥈',nom:'Hip Thrust Guidé',machine:'Hammer Plate Loaded Glute Drive',detail:'Fessiers et chaîne postérieure sans compression colonne.'},
+         {rank:'🥉',nom:'Pull-Through Câble',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'RDL avec tension constante, zéro charge axiale.'}],
   'lb3':[{rank:'🥇',nom:'Kettlebell Swings',machine:'Zone Kettlebells',detail:'Explosif — chaîne postérieure dynamique. 3×15-20.'}],
   'la4':[{rank:'🥇',nom:'Leg Press Plate Loaded',machine:'Hammer Plate Loaded Linear Leg Press',detail:'Charge plus progressive.'},
          {rank:'🥈',nom:'Leg Press Verticale',machine:'Gym80 4354 Pure Kraft Vertical Leg Press',detail:'Angle différent — recrutement fessiers plus marqué.'}],
@@ -1064,6 +1102,98 @@ function confirmSwap(exId, varIdx){
   if(sessExOpen[exId]){sessExOpen[newId]=true;delete sessExOpen[exId];}
 
   renderSessView();
+}
+
+// ═══ AJOUTER UN EXERCICE À LA SÉANCE ═══
+function showAddExPopup(){
+  var currentIds={};
+  activeSession.order.forEach(function(id){currentIds[id]=true;});
+  var seen={};
+  var byTag={};
+  SEANCES.forEach(function(s){
+    s.options.forEach(function(opt){
+      opt.exercices.forEach(function(ex){
+        if(seen[ex.id]||currentIds[ex.id])return;
+        seen[ex.id]=true;
+        if(!byTag[s.tag])byTag[s.tag]=[];
+        byTag[s.tag].push({id:ex.id,nom:ex.nom,machine:ex.machine,series:ex.series,repsTarget:ex.repsTarget,reposSec:ex.reposSec,tempo:ex.tempo,isForce:ex.isForce,badge:null,notes:ex.notes,tag:s.tag,couleur:s.couleur});
+      });
+    });
+  });
+
+  var overlay=document.createElement('div');
+  overlay.className='hist-overlay';
+  overlay.id='addex-overlay-ref';
+  overlay.onclick=function(e){if(e.target===overlay)closeAddExPopup();};
+
+  var rows=Object.keys(byTag).length===0
+    ?'<div style="text-align:center;padding:16px 0;font-size:12px;color:#52525b">Tous les exercices du programme sont déjà dans cette séance</div>'
+    :Object.entries(byTag).map(function(entry){
+      var tag=entry[0],list=entry[1];
+      var couleur=TAG_COLORS[tag]||'#71717a';
+      return '<div style="margin-bottom:10px">'
+        +'<div style="font-size:9px;font-weight:700;color:'+couleur+';letter-spacing:0.05em;text-transform:uppercase;margin-bottom:4px">'+tag+'</div>'
+        +list.map(function(ex){
+          return '<div onclick=\'confirmAddEx('+JSON.stringify(ex)+')\' style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;background:#0d0d0f;border:1px solid #1a1a1d;margin-bottom:4px;cursor:pointer">'
+            +'<div style="flex:1;min-width:0">'
+            +'<div style="font-size:12px;font-weight:600;color:#e4e4e7">'+ex.nom+'</div>'
+            +'<div style="font-size:9px;color:#3f3f46;font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ex.machine+'</div>'
+            +'</div>'
+            +'<span style="font-size:10px;color:#3f3f46;flex-shrink:0">+</span>'
+            +'</div>';
+        }).join('')
+        +'</div>';
+    }).join('');
+
+  overlay.innerHTML='<div class="hist-sheet" style="max-height:75vh;overflow-y:auto">'
+    +'<div class="hist-handle"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:700;color:#f4f4f5">Ajouter un exercice</div>'
+    +'<button onclick="closeAddExPopup()" style="background:#1a1a1d;border:1px solid #2a2a2e;border-radius:8px;padding:5px 10px;color:#71717a;font-size:11px;cursor:pointer;font-family:inherit">✕</button>'
+    +'</div>'
+    +rows
+    +'</div>';
+
+  document.body.appendChild(overlay);
+}
+function closeAddExPopup(){
+  var o=document.getElementById('addex-overlay-ref');
+  if(o)o.remove();
+}
+function confirmAddEx(ex){
+  closeAddExPopup();
+  activeSession.opt.exercices.push(ex);
+  activeSession.order.push(ex.id);
+  sessData[ex.id]={sets:initSets(ex),memo:'',timerSec:ex.reposSec||60};
+  sessExOpen[ex.id]=true;
+  renderSessView();
+}
+function removeExFromSession(exId){
+  if(activeSession.order.length<=1)return;
+  activeSession.order=activeSession.order.filter(function(id){return id!==exId;});
+  activeSession.opt.exercices=activeSession.opt.exercices.filter(function(e){return e.id!==exId;});
+  delete sessData[exId];
+  delete sessExOpen[exId];
+  delete sessExDetail[exId];
+  renderSessView();
+}
+
+function startFreeSession(){
+  var freeSeance={id:'libre',jour:'',focus:'Séance libre',couleur:'#71717a',tag:'LIBRE'};
+  var freeOpt={key:'free',label:'Libre',color:'#71717a',exercices:[]};
+  activeSession={seance:freeSeance,opt:freeOpt,order:[]};
+  sessData={};
+  sessExOpen={};
+  sessExDetail={};
+  sessElapsed=0;
+  sessMemo='';
+  sessPRs={};
+  Object.values(activeTimers).forEach(function(t){clearInterval(t.interval);});
+  activeTimers={};
+  if(sessTimer)clearInterval(sessTimer);
+  renderSessView();
+  startSessTimer();
+  setTimeout(function(){showAddExPopup();},200);
 }
 
 function startSession(seanceId,optKey){
@@ -1208,6 +1338,7 @@ function renderSessView(){
     +'</div></div></div>'
     +'<div style="max-width:600px;margin:0 auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px">'
     +exsHtml
+    +'<button onclick="showAddExPopup()" style="padding:10px;border-radius:10px;border:1px dashed #2a2a2e;background:transparent;color:#52525b;font-size:12px;cursor:pointer;font-family:inherit;margin-top:2px">+ Ajouter un exercice</button>'
     +'<div class="card card-pad" style="margin-top:4px">'
     +'<div class="section-label">Mémo séance</div>'
     +'<textarea placeholder="Ressenti, conditions, charge globale..." rows="2" onchange="sessMemo=this.value">'+sessMemo+'</textarea>'
@@ -1217,6 +1348,17 @@ function renderSessView(){
 }
 
 // ═══ RENDER VIEWS ═══
+function getWeeksSinceLastDeload(){
+  if(DB.length===0)return 0;
+  var sorted=DB.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var lastDeloadDate=null;
+  for(var i=0;i<sorted.length;i++){
+    if(sorted[i].deload){lastDeloadDate=new Date(sorted[i].date);break;}
+  }
+  var refDate=lastDeloadDate||new Date(sorted[sorted.length-1].date);
+  return Math.floor((new Date()-refDate)/(7*86400000));
+}
+
 function renderDash(){
   var seance=getSeance(dashDay);
   var opt=seance.options[dashOptIdx];
@@ -1270,8 +1412,19 @@ function renderDash(){
     +'</div>'
     :'';
 
+  var weeksSinceDeload=getWeeksSinceLastDeload();
+  var deloadReminder=(!deloadMode&&weeksSinceDeload>=6)
+    ?'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid rgba(251,146,60,0.3);background:rgba(251,146,60,0.06);margin-bottom:10px">'
+    +'<span style="font-size:18px">⚠️</span>'
+    +'<div style="flex:1"><div style="font-size:11px;font-weight:700;color:#fb923c">'+weeksSinceDeload+' semaines sans deload</div>'
+    +'<div style="font-size:9px;color:#9a3412;margin-top:1px">SNC et tendons au maximum — envisage une semaine de décharge</div></div>'
+    +'<button onclick="deloadMode=true;render()" style="padding:5px 10px;border-radius:7px;border:1px solid rgba(251,146,60,0.3);background:transparent;color:#fb923c;font-size:10px;cursor:pointer;font-family:inherit">Activer</button>'
+    +'</div>'
+    :'';
+
   return '<div class="content">'
     +deloadBanner
+    +deloadReminder
     +'<div class="grid3" style="margin-bottom:10px">'
     +'<div class="stat-card"><div style="font-size:22px;font-weight:700;font-family:monospace;color:#4ade80;line-height:1">'+wSess.length+'</div><div style="font-size:9px;color:#52525b;margin-top:4px">Cette semaine</div></div>'
     +'<div class="stat-card"><div style="font-size:22px;font-weight:700;font-family:monospace;color:#60a5fa;line-height:1">'+DB.length+'</div><div style="font-size:9px;color:#52525b;margin-top:4px">Total</div></div>'
@@ -1288,6 +1441,7 @@ function renderDash(){
     +'</div>'
     +'<button class="btn btn-primary" style="background:'+seance.couleur+'" onclick="startSession(\''+dashDay+'\',\''+opt.key+'\')">Lancer '+seance.tag+' Option '+opt.label+(deloadMode?' 🔄':'')+'</button>'
     +'<button onclick="deloadMode=!deloadMode;render()" style="width:100%;margin-top:6px;padding:9px;border-radius:9px;border:1px solid '+(deloadMode?'rgba(251,191,36,0.3)':'#1a1a1d')+';background:'+(deloadMode?'rgba(251,191,36,0.08)':'transparent')+';color:'+(deloadMode?'#fbbf24':'#52525b')+';font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">'+(deloadMode?'🔄 Deload ON — désactiver':'🔄 Activer le mode Deload')+'</button>'
+    +'<button onclick="startFreeSession()" style="width:100%;margin-top:6px;padding:9px;border-radius:9px;border:1px dashed #2a2a2e;background:transparent;color:#52525b;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">✦ Démarrer une séance libre</button>'
     +'</div>'
     +pbsHtml
     +'<div class="card card-pad"><div class="section-label">Dernières séances</div>'+recentHtml+'</div>'
@@ -1356,6 +1510,45 @@ function renderProg(){
     +'<div class="flex gap4" style="margin-bottom:12px">'+optTabs+'</div>'
     +exsHtml
     +'<button class="btn btn-primary" style="background:'+seance.couleur+';margin-top:8px" onclick="startSession(\''+progDay+'\',\''+opt.key+'\')">Lancer '+seance.tag+' Option '+opt.label+'</button>'
+    +'</div>';
+}
+
+function renderVacances(){
+  var seance=VACANCES_SEANCES;
+  var opt=seance.options[vacOptIdx];
+  var optTabs=seance.options.map(function(o,i){var a=vacOptIdx===i;return '<button class="opt-tab" style="border-color:'+(a?o.color+'40':'#1a1a1d')+';background:'+(a?o.color+'0c':'transparent')+'" onclick="setVacOpt('+i+')">'
+    +'<div style="font-size:10px;font-weight:700;color:'+o.color+'">'+o.label+' · '+o.sublabel+'</div>'
+    +'</button>';}).join('');
+  var exsHtml=opt.exercices.map(function(ex){
+    var open=exOpen['vac-'+ex.id];
+    var bst=ex.badge&&BADGE_COLORS[ex.badge]?BADGE_COLORS[ex.badge]:null;
+    return '<div class="ex-card" style="border-color:#1a1a1d">'
+      +'<div class="ex-header" onclick="toggleExOpen(\'vac-'+ex.id+'\')">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'
+      +'<span style="font-size:12px;font-weight:600;color:#f4f4f5">'+ex.nom+'</span>'
+      +(bst?'<span class="pill" style="background:'+bst.bg+';color:'+bst.color+';border-color:'+bst.border+'">'+ex.badge+'</span>':'')
+      +'</div>'
+      +'<div style="font-size:9px;color:#3f3f46;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ex.machine+'</div>'
+      +'</div>'
+      +'<div style="font-size:11px;font-family:monospace;color:'+opt.color+';flex-shrink:0">'+ex.series+'×'+ex.repsTarget+'</div>'
+      +'<span style="font-size:9px;color:#2a2a2e;display:inline-block;transform:'+(open?'rotate(180deg)':'rotate(0deg)')+';transition:transform 0.2s">▼</span>'
+      +'</div>'
+      +(open?'<div class="ex-body">'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+        +[['Séries',String(ex.series)],['Reps',ex.repsTarget],['Tempo',ex.tempo],['Repos',ex.reposSec+'s']].map(function(it){return '<div style="display:flex;gap:4px;align-items:center;font-size:10px"><span style="color:#3f3f46">'+it[0]+'</span><span style="font-family:monospace;font-weight:700;color:#d4d4d8;background:#111113;padding:2px 6px;border-radius:5px">'+it[1]+'</span></div>';}).join('')
+        +'</div>'
+        +(ex.notes?'<div style="font-size:10px;color:#52525b;line-height:1.5">'+ex.notes+'</div>':'')
+        +'</div>':'')
+      +'</div>';
+  }).join('');
+  return '<div class="content">'
+    +'<div style="margin-bottom:7px;padding:9px 11px;border-radius:9px;border:1px solid #1a1a1d;background:rgba(18,18,22,0.6);border-left:3px solid '+seance.couleur+'">'
+    +'<div style="font-size:11px;font-weight:700;color:'+seance.couleur+'">🏖 '+seance.tag+'</div>'
+    +'<div style="font-size:10px;color:#71717a;margin-top:2px">'+seance.focus+'</div></div>'
+    +'<div class="flex gap4" style="margin-bottom:12px">'+optTabs+'</div>'
+    +exsHtml
+    +'<button class="btn btn-primary" style="background:'+seance.couleur+';margin-top:8px" onclick="startSession(\'vacances\',\''+opt.key+'\')">Lancer '+opt.label+' · '+opt.sublabel+'</button>'
     +'</div>';
 }
 
@@ -1505,9 +1698,19 @@ function renderHist(){
       +'<div style="font-size:9px;color:#52525b;margin-top:2px">Streak — 3+ séances/sem. consécutives</div></div>'
       +'</div>'
     :'';
-  return '<div class="content">'
-    +streakHtml
-    +DB.map(function(s){
+  var tags=['all','PULL','PUSH','LOWER','UPPER'];
+  var filterHtml='<div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto">'
+    +tags.map(function(t){
+      var active=histFilter===t;
+      var col=t==='all'?'#71717a':(TAG_COLORS[t]||'#71717a');
+      var label=t==='all'?'Toutes':t;
+      return '<button onclick="setHistFilter(\''+t+'\')" style="flex-shrink:0;padding:6px 12px;border-radius:20px;border:1px solid '+(active?col+'50':'#1a1a1d')+';background:'+(active?col+'12':'transparent')+';color:'+(active?col:'#52525b')+';font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">'+label+'</button>';
+    }).join('')
+    +'</div>';
+  var filteredDB=histFilter==='all'?DB:DB.filter(function(s){return s.tag===histFilter;});
+  var listHtml=filteredDB.length===0
+    ?'<div style="text-align:center;padding:40px 0"><div style="font-size:12px;color:#52525b">Aucune séance '+histFilter+'</div></div>'
+    :filteredDB.map(function(s){
       var prsHtml='';
       if(s.prs&&s.prs.length>0){
         prsHtml='<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:4px">'
@@ -1539,9 +1742,15 @@ function renderHist(){
           +'</div>'
           :'<div style="padding:0 12px 6px"><button onclick="event.stopPropagation();confirmDel=\''+s.id+'\';render()" style="font-size:9px;color:#2a2a2e;background:none;border:none;cursor:pointer;padding:0;font-family:inherit">🗑 Supprimer</button></div>')
         +'</div>';
-    }).join('')
+    }).join('');
+  return '<div class="content">'
+    +streakHtml
+    +filterHtml
+    +listHtml
     +'</div>';
 }
+
+function setHistFilter(t){histFilter=t;render();}
 
 function renderSessDetail(s){
   var app=document.getElementById('app');
@@ -1587,6 +1796,7 @@ function setDashOpt(i){dashOptIdx=i;render();}
 function setProgDay(d){progDay=d;render();}
 function setProgOpt(i){progOptIdx[progDay]=i;render();}
 function setGuideTab(t){guideTab=t;render();}
+function setVacOpt(i){vacOptIdx=i;render();}
 function setSearch(q){searchQ=q;render();}
 function setSearchFilt(f){searchFilt=f;render();}
 function moveCal(dir){calMonth+=dir;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}render();}
@@ -1694,6 +1904,13 @@ function renderParams(){
     +'<div style="font-size:12px;color:#71717a;line-height:1.6;margin-bottom:10px">Commandements, Feu Vert, Volume par muscle.</div>'
     +'<button onclick="switchTab(\'guide\')" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(251,191,36,0.3);background:rgba(251,191,36,0.07);color:#fbbf24;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📖 Ouvrir le Guide</button>'
     +'</div>'
+
+    // — Vacances —
+    +'<div class="section-label" style="margin-bottom:6px">Mode Vacances</div>'
+    +'<div class="card card-pad" style="margin-bottom:10px">'
+    +'<div style="font-size:12px;color:#71717a;line-height:1.6;margin-bottom:10px">3 séances full body — kit élastiques 120kg + poids de corps. Pour les périodes hors salle.</div>'
+    +'<button onclick="switchTab(\'vacances\')" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(34,211,238,0.3);background:rgba(34,211,238,0.07);color:#22d3ee;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🏖 Ouvrir Vacances</button>'
+    +'</div>'
     +'<div class="section-label" style="margin-bottom:6px">Sauvegarde</div>'
     +'<div class="card card-pad" style="margin-bottom:10px">'
     +'<div style="font-size:12px;color:#71717a;line-height:1.6;margin-bottom:10px">'
@@ -1728,7 +1945,7 @@ function getAllExercises(){
 }
 
 function getStatsForEx(exId){
-  // Retourne [{date, poidsMax, volumeTotal}] trié chronologiquement
+  // Retourne [{date, poidsMax, volumeTotal, rm1}] trié chronologiquement
   var points=[];
   DB.forEach(function(s){
     var ex=s.exercises&&s.exercises.find(function(e){return e.id===exId;});
@@ -1737,7 +1954,11 @@ function getStatsForEx(exId){
     if(!ws.length)return;
     var pMax=Math.max.apply(null,ws.map(function(st){return parseFloat(st.poids)||0;}));
     var vol=ws.reduce(function(a,st){return a+(parseFloat(st.poids)||0)*(parseFloat(st.reps)||0);},0);
-    points.push({date:s.date,poidsMax:pMax,vol:Math.round(vol)});
+    var rm1=Math.max.apply(null,ws.map(function(st){
+      var p=parseFloat(st.poids)||0,r=parseFloat(st.reps)||0;
+      return p*(1+r/30);
+    }));
+    points.push({date:s.date,poidsMax:pMax,vol:Math.round(vol),rm1:Math.round(rm1*10)/10});
   });
   points.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
   return points;
@@ -1865,15 +2086,17 @@ function renderStats(){
   var summary='';
   if(points.length>0){
     var poids=points.map(function(p){return p.poidsMax;});
-    var vols=points.map(function(p){return p.vol;});
     var best=Math.max.apply(null,poids);
+    var bestRM=Math.max.apply(null,points.map(function(p){return p.rm1;}));
     var last=points[points.length-1];
     var first=points[0];
     var trend=last.poidsMax-first.poidsMax;
-    var trendVol=last.vol-first.vol;
-    summary='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+    summary='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
       +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:#c084fc;line-height:1">'+best+'<span style="font-size:10px;color:#71717a"> kg</span></div><div style="font-size:9px;color:#52525b;margin-top:3px">Record poids</div></div>'
-      +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:#c084fc;line-height:1">'+points.length+'</div><div style="font-size:9px;color:#52525b;margin-top:3px">Séances</div></div>'
+      +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:#fbbf24;line-height:1">'+bestRM+'<span style="font-size:10px;color:#71717a"> kg</span></div><div style="font-size:9px;color:#52525b;margin-top:3px">1RM estimé</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
+      +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:#a78bfa;line-height:1">'+points.length+'</div><div style="font-size:9px;color:#52525b;margin-top:3px">Séances</div></div>'
       +'<div class="stat-card"><div style="font-size:18px;font-weight:700;font-family:monospace;color:'+(trend>=0?'#4ade80':'#f87171')+';line-height:1">'+(trend>=0?'+':'')+trend+'<span style="font-size:10px;color:#71717a"> kg</span></div><div style="font-size:9px;color:#52525b;margin-top:3px">Progression</div></div>'
       +'</div>';
   }
@@ -1895,6 +2118,16 @@ function renderStats(){
       +'<div style="padding:0 8px 10px;overflow:hidden">'
       +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
       +drawLineChart(points,'poidsMax','#c084fc',W,H)
+      +'</svg></div></div>'
+      // Courbe 1RM estimé
+      +'<div class="card" style="margin-bottom:8px">'
+      +'<div style="padding:10px 12px 4px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:10px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:0.06em">1RM estimé · kg</span>'
+      +'<span style="font-size:9px;color:#3f3f46;font-family:monospace">Epley</span>'
+      +'</div>'
+      +'<div style="padding:0 8px 10px;overflow:hidden">'
+      +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
+      +drawLineChart(points,'rm1','#fbbf24',W,H)
       +'</svg></div></div>'
       // Barres volume
       +'<div class="card" style="margin-bottom:8px">'
@@ -1941,6 +2174,7 @@ function render(){
   else if(currentTab==='hist')html=renderHist();
   else if(currentTab==='stats')html=renderStats();
   else if(currentTab==='params')html=renderParams();
+  else if(currentTab==='vacances')html=renderVacances();
   app.innerHTML=html;
 
   // Update nav
