@@ -259,6 +259,7 @@ var sessPRs = {};
 var deloadMode = false; // Mode deload — charges à 60%, timer désactivé
 var histFilter = 'all';
 var vacOptIdx = 0;
+var warmupOpen = {};
 
 function getRecordPoids(exId){
   // Retourne le poids max historique pour cet exercice (hors session en cours)
@@ -292,6 +293,14 @@ var BADGE_COLORS = {
 };
 var TAG_COLORS = {PULL:'#4ade80',PUSH:'#f87171',LOWER:'#facc15',UPPER:'#60a5fa'};
 
+var ECHAUFFEMENT = {
+  PULL:['5 min vélo/rameur léger — élévation température corporelle','Rotations d\'épaules + cercles bras, 15-20 reps','Band Pull-aparts × 15-20 — active les rhomboïdes/trapèzes','2-3 séries légères de rowing/tirage à vide ou charge très légère avant le premier exercice noté'],
+  PUSH:['5 min vélo/rameur léger','Rotations d\'épaules + cercles bras, 15-20 reps','Scapula Push-ups × 10-15 — active la coiffe des rotateurs','Échauffement spécifique coude droit : extensions légères sans charge, 10-15 reps','2-3 séries légères sur le premier exercice avant la charge de travail'],
+  LOWER:['5-8 min vélo/rameur — les jambes ont besoin de plus de mise en route','Mobilité hanches : cercles + fentes dynamiques, 10/côté','Squats au poids de corps × 15-20','Activation ischio/fessiers : pont fessier × 15 avant le premier exercice'],
+  UPPER:['5 min vélo/rameur léger','10 Scapula Pull-ups','20 Band Pull-aparts','Rotations d\'épaules + cercles bras','Si Tractions en premier : quelques négatives lentes ou tractions assistées légères avant les séries de travail'],
+  VACANCES:['5 min marche rapide ou jumping jacks','Rotations articulaires générales (épaules, hanches, chevilles)','1-2 tours légers des mouvements prévus, sans résistance ou résistance minimale']
+};
+
 var SEANCES = [
   {id:'lundi',tag:'PULL',jour:'LUN',couleur:'#4ade80',focus:'Dos · Biceps',options:[
     {key:'A',label:'A',color:'#4ade80',exercices:[
@@ -307,8 +316,8 @@ var SEANCES = [
       {id:'pb1',nom:'Rowing Barre Libre',machine:'Rack Eleiko',series:3,repsTarget:'5-7',reposSec:180,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · cou mobile obligatoire',badge:'FORCE'},
       {id:'pb2',nom:'Tirage Vertical Prise Large',machine:'Gym80 4116',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · Épaules basses'},
       {id:'pb3',nom:'Rowing Câble Bas MAG Grip',machine:'Gym80 4016 — poulie basse',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Écraser les omoplates 2s'},
-      {id:'pb4',nom:'Hammer Row Volume',machine:'Hammer ISO-Lateral Row',series:3,repsTarget:'10-12',reposSec:90,tempo:'2-0-1-2',isForce:false,notes:'Gauche en premier'},
       {id:'pb5',nom:'Face Pull',machine:'Gym80 4012 — poulie haute',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Coudes très ouverts'},
+      {id:'pb4',nom:'Curl Biceps Iso-Lat',machine:'Hammer Seated Biceps',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE · supination',badge:'ASYM'},
       {id:'pb6',nom:'Curl Marteau Câble',machine:'Gym80 4012 — poulie basse',series:3,repsTarget:'10-12',reposSec:60,tempo:'3-0-1-1',isForce:false,notes:'SANGLES INTERDITES'},
       {id:'pb7',nom:'Hyperextensions',machine:'Station 45°',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-2-0',isForce:false,notes:'Regard au sol'}
     ]},
@@ -370,11 +379,20 @@ var SEANCES = [
       {id:'lb5',nom:'Mollets Debout',machine:'Gym80 3018',series:3,repsTarget:'20',reposSec:45,tempo:'2-2-1-0',isForce:false,notes:'Pause 2s en bas'},
       {id:'lb6',nom:'Hollow Body Hold',machine:'Sol',series:3,repsTarget:'30-45s',reposSec:45,tempo:'Statique',isForce:false,notes:'Dos plaqué 100% au sol'},
       {id:'lb7',nom:'Rotation Obliques Câble',machine:'Gym80 4012 — poulie moyenne',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Rotation contrôlée · charge modérée',badge:'ABS'}
+    ]},
+    {key:'C',label:'C',color:'#facc15',sublabel:'Haut du corps fatigué/douloureux',exercices:[
+      {id:'lc1',nom:'Leg Curl Assis',machine:'Gym80 3003',series:3,repsTarget:'12-15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Dossier soutient le dos — zéro sollicitation nuque/épaules'},
+      {id:'lc2',nom:'Belt Squat',machine:'Gym80 4360',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Charge sur les hanches — mains libres ou appui léger, zéro charge nuque'},
+      {id:'lc3',nom:'Presse à Cuisses',machine:'Gym80 3030',series:3,repsTarget:'12-15',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'Dos et nuque entièrement soutenus par le dossier'},
+      {id:'lc4',nom:'Leg Extension',machine:'Gym80 3001',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Assis, dossier soutenu, aucune prise en main lourde'},
+      {id:'lc5',nom:'Hip Thrust Guidé',machine:'Gym80 4352 Pure Kraft Booty Booster (ou Hammer Glute Drive)',series:3,repsTarget:'15',reposSec:60,tempo:'2-0-1-2',isForce:false,notes:'Rouleau pelvien + dossier mobile — dos/nuque intégralement soutenus'},
+      {id:'lc6',nom:'Mollets Assis',machine:'Hammer Plate Loaded Seated Calf',series:3,repsTarget:'20',reposSec:45,tempo:'2-2-1-0',isForce:false,notes:'Assis, dossier soutenu — évite la position debout avec épaulières'},
+      {id:'lc7',nom:'Crunch Machine',machine:'Gym80 3008',series:3,repsTarget:'20',reposSec:60,tempo:'2-0-1-1',isForce:false,notes:'Si inconfort en position assise, remplacer par respiration/mobilité douce'}
     ]}
   ]},
   {id:'samedi',tag:'UPPER',jour:'SAM',couleur:'#60a5fa',focus:'Volume · Densité · Congestion',options:[
     {key:'A',label:'A',color:'#60a5fa',exercices:[
-      {id:'ua1',nom:'Tractions Pronation',machine:'Gym80 3017',series:4,repsTarget:'6',reposSec:120,tempo:'3-0-1-1',isForce:true,notes:'SANGLES · réduire assistance chaque semaine',badge:'FORCE'},
+      {id:'ua1',nom:'Tractions Pronation',machine:'Gym80 3017 (ou barre libre)',series:4,repsTarget:'6-8',reposSec:120,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · Poids de corps — pas de ramping possible. Sac lesté si 4×8 devient facile.',badge:'FORCE'},
       {id:'ua2',nom:'Développé Couché Iso-Lat Assis',machine:'Hammer Seated Bench',series:3,repsTarget:'10-12',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'LOI DU GAUCHE',badge:'ASYM'},
       {id:'ua3',nom:'Pullover Machine',machine:'Hammer Pullover',series:3,repsTarget:'12-15',reposSec:90,tempo:'3-0-1-1',isForce:false,notes:'SANGLES · avant les Dips — repose le coude'},
       {id:'ua4',nom:'Dips Poids de Corps',machine:'Barres parallèles',series:3,repsTarget:'8-10',reposSec:90,tempo:'3-0-1-0',isForce:false,notes:'Buste penché · arrêt strict parallèle'},
@@ -465,21 +483,21 @@ var FEU = [
 ];
 
 var VOL = [
-  {m:'Grand Dorsal',    PULL:9,  PUSH:0, LOWER:0, UPPER:6},
-  {m:'Pectoraux',       PULL:0,  PUSH:9, LOWER:0, UPPER:6},
-  {m:'Biceps',          PULL:6,  PUSH:0, LOWER:0, UPPER:3},
-  {m:'Triceps',         PULL:0,  PUSH:5, LOWER:0, UPPER:6},
-  {m:'Deltoïde médial', PULL:0,  PUSH:4, LOWER:0, UPPER:3},
-  {m:'Deltoïde ant.',   PULL:0,  PUSH:6, LOWER:0, UPPER:0},
-  {m:'Deltoïde post.',  PULL:3,  PUSH:0, LOWER:0, UPPER:3},
-  {m:'Trapèzes',        PULL:4,  PUSH:0, LOWER:0, UPPER:0},
-  {m:'Érecteurs',       PULL:3,  PUSH:0, LOWER:0, UPPER:0},
-  {m:'Quadriceps',      PULL:0,  PUSH:0, LOWER:9, UPPER:0},
-  {m:'Ischio-jambiers', PULL:0,  PUSH:0, LOWER:6, UPPER:0},
-  {m:'Fessiers',        PULL:0,  PUSH:0, LOWER:7, UPPER:0},
-  {m:'Mollets',         PULL:0,  PUSH:0, LOWER:4, UPPER:0},
-  {m:'Abdominaux',      PULL:0,  PUSH:3, LOWER:3, UPPER:3},
-  {m:'Obliques',        PULL:0,  PUSH:0, LOWER:3, UPPER:0}
+  {m:'Grand Dorsal',    PULL:9,  PUSH:0, LOWER:0, UPPER:6, reps:147},
+  {m:'Pectoraux',       PULL:0,  PUSH:9, LOWER:0, UPPER:6, reps:147},
+  {m:'Biceps',          PULL:6,  PUSH:0, LOWER:0, UPPER:3, reps:102},
+  {m:'Triceps',         PULL:0,  PUSH:5, LOWER:0, UPPER:6, reps:96},
+  {m:'Deltoïde médial', PULL:0,  PUSH:4, LOWER:0, UPPER:3, reps:98},
+  {m:'Deltoïde ant.',   PULL:0,  PUSH:6, LOWER:0, UPPER:0, reps:90},
+  {m:'Deltoïde post.',  PULL:3,  PUSH:0, LOWER:0, UPPER:3, reps:87},
+  {m:'Trapèzes',        PULL:4,  PUSH:0, LOWER:0, UPPER:0, reps:90},
+  {m:'Érecteurs',       PULL:3,  PUSH:0, LOWER:0, UPPER:0, reps:95},
+  {m:'Quadriceps',      PULL:0,  PUSH:0, LOWER:9, UPPER:0, reps:108},
+  {m:'Ischio-jambiers', PULL:0,  PUSH:0, LOWER:6, UPPER:0, reps:108},
+  {m:'Fessiers',        PULL:0,  PUSH:0, LOWER:7, UPPER:0, reps:108},
+  {m:'Mollets',         PULL:0,  PUSH:0, LOWER:4, UPPER:0, reps:80},
+  {m:'Abdominaux',      PULL:0,  PUSH:3, LOWER:3, UPPER:3, reps:130},
+  {m:'Obliques',        PULL:0,  PUSH:0, LOWER:3, UPPER:0, reps:42}
 ];
 
 // ═══ HELPERS ═══
@@ -976,6 +994,9 @@ var VARIANTES = {
   'pc4':[{rank:'🥇',nom:'Curl Biceps Machine Gym80',machine:'Gym80 3010 Biceps Machine',detail:'Machine guidée Gym80 — même isolation. Loi du Gauche applicable.'},
          {rank:'🥈',nom:'Curl Pupitre Supination',machine:'Support biceps assis + Haltère',detail:'Banc pupitre + haltère. Même cible chef court. Loi du Gauche.'},
          {rank:'🥉',nom:'Curl Incliné Haltère Supination',machine:'Banc inclinable 60°',detail:'Bras pendants derrière le dossier.'}],
+  'pb4':[{rank:'🥇',nom:'Curl Biceps Machine Gym80',machine:'Gym80 3010 Biceps Machine',detail:'Machine guidée Gym80 — même isolation. Loi du Gauche applicable.'},
+         {rank:'🥈',nom:'Curl Pupitre Supination',machine:'Support biceps assis + Haltère',detail:'Banc pupitre + haltère. Même cible chef court. Loi du Gauche.'},
+         {rank:'🥉',nom:'Curl Incliné Haltère Supination',machine:'Banc inclinable 60°',detail:'Bras pendants derrière le dossier. Étirement maximal + pic du biceps.'}],
   'pa6':[{rank:'🥇',nom:'Curl Marteau Câble',machine:'Gym80 4012 Cable Crossover — poulie basse',detail:'Tension constante sur tout le mouvement. Debout.'},
          {rank:'🥈',nom:'Curl Marteau Corde',machine:'Gym80 4012 Cable Crossover — corde double, poulie basse',detail:'Tension constante + prise corde qui suit naturellement la rotation neutre. Excellent maintien de tension en haut de mouvement.'},
          {rank:'🥉',nom:'Zottman Curl',machine:'Haltères — assis sur banc',detail:'Montée supination, descente pronation lente 3s. Biceps + brachioradial.'}],
@@ -1048,6 +1069,25 @@ var VARIANTES = {
          {rank:'🥈',nom:'Crunch Machine Allongé',machine:'Gym80 3034 Lying Abdominal Machine',detail:'Allongé — isolation abdos.'}],
   'lb2':[{rank:'🥇',nom:'Box Step-Ups',machine:'Banc plat ou box dédié',detail:'Unilatéral pur. Renforcement quadriceps + stabilisation genoux.'}],
   'lb6':[{rank:'🥇',nom:'Dead Bug',machine:'Tapis (sol)',detail:'3×15 alternées très lent. Même intention, plus accessible.'}],
+  'la8':[{rank:'🥇',nom:'Rotation Russian Twist Poids Corps',machine:'Sol — disque léger ou poids de corps',detail:'Alternative sans câble si la poulie moyenne est prise. Contrôlé, amplitude modérée.'},
+         {rank:'🥈',nom:'Bûcheron Câble (Wood Chop)',machine:'Gym80 4012 Cable Crossover — poulie haute',detail:'Rotation diagonale haut vers bas, même sollicitation obliques contrôlée.'}],
+  'lb7':[{rank:'🥇',nom:'Rotation Russian Twist Poids Corps',machine:'Sol — disque léger ou poids de corps',detail:'Alternative sans câble si la poulie moyenne est prise.'},
+         {rank:'🥈',nom:'Bûcheron Câble (Wood Chop)',machine:'Gym80 4012 Cable Crossover — poulie haute',detail:'Rotation diagonale, même sollicitation obliques.'}],
+
+  // ── LOWER Option C (haut du corps fatigué/douloureux) ──
+  'lc1':[{rank:'🥇',nom:'Leg Curl À Genoux Iso-Latéral',machine:'Hammer ISO-Lateral Kneeling Leg Curl',detail:'Appui sur les avant-bras, dossier/support frontal — zéro charge nuque/épaules.'},
+         {rank:'🥈',nom:'Leg Curl Allongé',machine:'Machine à leg curl allongé si disponible',detail:'Position couchée, aucune tenue de charge, nuque totalement relâchée.'}],
+  'lc2':[{rank:'🥇',nom:'Presse à Cuisses (angle serré)',machine:'Gym80 3030 — pieds hauts et serrés',detail:'Si Belt Squat pris, la Presse cible aussi bien les quadriceps sans charge nuque/épaules.'},
+         {rank:'🥈',nom:'Leg Extension (charge augmentée)',machine:'Gym80 3001',detail:'En dépannage, monter légèrement la charge sur l\'isolation quadriceps pour compenser l\'absence de mouvement composé.'}],
+  'lc3':[{rank:'🥇',nom:'Presse à Cuisses Plate Loaded',machine:'Hammer Plate Loaded Linear Leg Press',detail:'Mêmes garanties de sécurité — dos et nuque posés, charge progressive.'},
+         {rank:'🥈',nom:'Presse Verticale',machine:'Gym80 4354 Pure Kraft Vertical Leg Press',detail:'Angle différent, même sécurité posturale, dossier complet.'}],
+  'lc4':[{rank:'🥇',nom:'Leg Extension Iso-Latéral',machine:'Hammer ISO-Lateral Leg Extension',detail:'Un quadriceps à la fois, toujours assis dossier soutenu.'}],
+  'lc5':[{rank:'🥇',nom:'Booty Booster',machine:'Gym80 4352 Pure Kraft Booty Booster',detail:'Rouleau pelvien + dossier mobile guidé — dos et nuque intégralement soutenus, aucune prise en main nécessaire.'},
+         {rank:'🥈',nom:'Pont Fessier au Sol',machine:'Tapis (sol) — poids de corps ou disque léger sur le bassin',detail:'Aucune prise en main nécessaire, nuque au sol relâchée. Bon repli si la machine Booty Booster est prise.'},
+         {rank:'🥉',nom:'Kickback Fessier Câble',machine:'Gym80 4012 Cable Crossover — poulie basse, cheville',detail:'Appui mains léger sur la machine pour l\'équilibre seulement, pas de charge tenue.'}],
+  'lc6':[{rank:'🥇',nom:'Mollets à la Presse',machine:'Gym80 3030 — pieds en bas de plateforme',detail:'Assis, dossier soutenu, même tempo 2-2-1-0 que la version debout.'}],
+  'lc7':[{rank:'🥇',nom:'Relevés de Bassin au Sol',machine:'Tapis (sol)',detail:'Allongé, nuque relâchée au sol — si la position assise du Crunch Machine gêne encore.'},
+         {rank:'🥈',nom:'Respiration Diaphragmatique + Mobilité Douce',machine:'Sol',detail:'Si tout inconfort persiste : 2-3 min de respiration profonde allongé, aucune sollicitation musculaire.'}],
 
   // ── UPPER ──
   'ua1':[{rank:'🥇',nom:'Tirage Vertical Prise Pronation Lourd',machine:'Gym80 4116 LAT PULL STATION',detail:'Même pattern, assisté. 3×6-8 lourd.'},
@@ -1067,11 +1107,17 @@ var VARIANTES = {
          {rank:'🥈',nom:'Extension Triceps Machine',machine:'Gym80 3011 Triceps Extension Machine',detail:'3×12-15. Guidé, zéro contrainte.'}],
   'ua5':[{rank:'🥇',nom:'SUPERSET Câble : Latérales + Face Pull',machine:'Gym80 4012 Cable Crossover — poulie basse + corde haute',detail:'5A élévations câble bas / 5B face pull corde. Même logique, même muscles.'}],
   'ub5':[{rank:'🥇',nom:'Revenir Option A — 3050 + 3025',machine:'Gym80 3050 + Gym80 3025',detail:'Plus isolé et plus lourd.'}],
-  'ua6':[{rank:'🥇',nom:'SUPERSET via Cable Crossover',machine:'Gym80 4012 Cable Crossover',detail:'Bayesian Curl + Extension overhead unilatérale sur câble classique.'},
-         {rank:'🥈',nom:'SUPERSET Haltères',machine:'Banc inclinable 60° + haltères',detail:'Curl incliné 60° pour chef long / Extension overhead haltère pour triceps.'}],
-  'ub6':[{rank:'🥇',nom:'SUPERSET Haltères',machine:'Banc inclinable 60° + haltères',detail:'Curl incliné + extension overhead haltère.'}],
+  'ua6':[{rank:'🥇',nom:'Extension Overhead Unilatéral Corde',machine:'Gym80 4012 Cable Crossover — poulie basse, corde 1 main',detail:'Rotation neutre = protège le coude droit. Applique la Loi du Gauche (asymétrie force triceps détectable et corrigeable). Recommandé si historique coude sensible.'},
+         {rank:'🥈',nom:'SUPERSET via Cable Crossover',machine:'Gym80 4012 Cable Crossover',detail:'Bayesian Curl + Extension overhead unilatérale sur câble classique.'},
+         {rank:'🥉',nom:'SUPERSET Haltères',machine:'Banc inclinable 60° + haltères',detail:'Curl incliné 60° pour chef long / Extension overhead haltère pour triceps.'}],
+  'ub6':[{rank:'🥇',nom:'Extension Overhead Unilatéral Corde',machine:'Gym80 4012 Cable Crossover — poulie basse, corde 1 main',detail:'Rotation neutre = protège le coude droit. Applique la Loi du Gauche.'},
+         {rank:'🥈',nom:'SUPERSET Haltères',machine:'Banc inclinable 60° + haltères',detail:'Curl incliné + extension overhead haltère.'}],
   'ua7':[{rank:'🥇',nom:'Farmer Carry',machine:'Haltères 30-40kg',detail:'2×30m en salle. Même effet grip + décompression active.'}],
-  'ub7':[{rank:'🥇',nom:'Farmer Carry',machine:'Haltères 30-40kg',detail:'2×30m. Grip + décompression active.'}]
+  'ub7':[{rank:'🥇',nom:'Farmer Carry',machine:'Haltères 30-40kg',detail:'2×30m. Grip + décompression active.'}],
+  'ua8':[{rank:'🥇',nom:'Planche Latérale Alternée',machine:'Sol',detail:'Alterne face + côtés — engage aussi les obliques en plus du transverse.'},
+         {rank:'🥈',nom:'Planche sur Ballon/Bosu',machine:'Sol — ballon suisse ou bosu si disponible',detail:'Instabilité ajoutée = recrutement stabilisateurs plus complet.'}],
+  'ub8':[{rank:'🥇',nom:'Planche Latérale Alternée',machine:'Sol',detail:'Alterne face + côtés — engage aussi les obliques.'},
+         {rank:'🥈',nom:'Planche sur Ballon/Bosu',machine:'Sol — ballon suisse ou bosu si disponible',detail:'Instabilité ajoutée = recrutement stabilisateurs plus complet.'}]
 };
 
 function getSwapCandidates(exId){
@@ -1567,9 +1613,25 @@ function renderProg(){
     +'<div class="flex gap4" style="margin-bottom:8px">'+dayTabs+'</div>'
     +'<div style="margin-bottom:7px;padding:9px 11px;border-radius:9px;border:1px solid #1a1a1d;background:rgba(18,18,22,0.6);border-left:3px solid '+seance.couleur+'">'
     +'<div style="font-size:11px;font-weight:600;color:#e4e4e7">'+seance.focus+'</div></div>'
+    +renderWarmupCard(seance.tag)
     +'<div class="flex gap4" style="margin-bottom:12px">'+optTabs+'</div>'
     +exsHtml
     +'<button class="btn btn-primary" style="background:'+seance.couleur+';margin-top:8px" onclick="startSession(\''+progDay+'\',\''+opt.key+'\')">Lancer '+seance.tag+' Option '+opt.label+'</button>'
+    +'</div>';
+}
+
+function renderWarmupCard(tag){
+  var items=ECHAUFFEMENT[tag];
+  if(!items)return '';
+  var open=warmupOpen[tag];
+  return '<div style="border-radius:9px;border:1px solid rgba(96,165,250,0.2);background:rgba(96,165,250,0.04);margin-bottom:8px;overflow:hidden">'
+    +'<div onclick="toggleWarmup(\''+tag+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;cursor:pointer">'
+    +'<span style="font-size:11px;font-weight:600;color:#93c5fd">🔥 Échauffement</span>'
+    +'<span style="font-size:9px;color:#3f3f46;transform:'+(open?'rotate(180deg)':'rotate(0deg)')+';transition:transform 0.2s">▼</span>'
+    +'</div>'
+    +(open?'<div style="padding:0 11px 10px">'
+      +items.map(function(it){return '<div style="font-size:10px;color:#a1a1aa;margin-bottom:4px;display:flex;gap:6px;line-height:1.4"><span style="color:#60a5fa;flex-shrink:0">›</span><span>'+it+'</span></div>';}).join('')
+      +'</div>':'')
     +'</div>';
 }
 
@@ -1606,6 +1668,7 @@ function renderVacances(){
     +'<div style="margin-bottom:7px;padding:9px 11px;border-radius:9px;border:1px solid #1a1a1d;background:rgba(18,18,22,0.6);border-left:3px solid '+seance.couleur+'">'
     +'<div style="font-size:11px;font-weight:700;color:'+seance.couleur+'">🏖 '+seance.tag+'</div>'
     +'<div style="font-size:10px;color:#71717a;margin-top:2px">'+seance.focus+'</div></div>'
+    +renderWarmupCard('VACANCES')
     +'<div class="flex gap4" style="margin-bottom:12px">'+optTabs+'</div>'
     +exsHtml
     +'<button class="btn btn-primary" style="background:'+seance.couleur+';margin-top:8px" onclick="startSession(\'vacances\',\''+opt.key+'\')">Lancer '+opt.label+' · '+opt.sublabel+'</button>'
@@ -1672,7 +1735,7 @@ function renderGuide(){
   if(guideTab==='vol'){
     var maxVol=0; VOL.forEach(function(r){var t=r.PULL+r.PUSH+r.LOWER+r.UPPER;if(t>maxVol)maxVol=t;});
     var legend=Object.entries(TAG_COLORS).map(function(e){return '<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:2px;background:'+e[1]+'"></div><span style="font-size:9px;color:#52525b">'+e[0]+'</span></div>';}).join('');
-    content='<div style="font-size:9px;color:#3f3f46;margin-bottom:4px">Séries effectives / muscle / semaine. Objectif hypertrophie : 10-20 séries.</div>'
+    content='<div style="font-size:9px;color:#3f3f46;margin-bottom:4px">Séries et répétitions effectives / muscle / semaine. Objectif hypertrophie : 10-20 séries.</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">'+legend+'</div>'
       +VOL.map(function(row){
         var total=row.PULL+row.PUSH+row.LOWER+row.UPPER;
@@ -1681,7 +1744,7 @@ function renderGuide(){
         return '<div style="margin-bottom:4px">'
           +'<div style="display:flex;justify-content:space-between;margin-bottom:2px">'
           +'<span style="font-size:10px;color:#d4d4d8">'+row.m+'</span>'
-          +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">'+icon+'</span><span style="font-size:9px;font-family:monospace;color:#71717a">'+total+'s/sem</span></div>'
+          +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">'+icon+'</span><span style="font-size:9px;font-family:monospace;color:#71717a">'+total+'s · '+(row.reps||0)+'r/sem</span></div>'
           +'</div>'
           +'<div class="vol-bar">'+segs+(total===0?'<div style="height:100%;border-radius:2px;background:#1e1e22;flex:1"></div>':'')+'</div>'
           +'</div>';
@@ -1868,6 +1931,7 @@ function setProgDay(d){progDay=d;render();}
 function setProgOpt(i){progOptIdx[progDay]=i;render();}
 function setGuideTab(t){guideTab=t;render();}
 function setVacOpt(i){vacOptIdx=i;render();}
+function toggleWarmup(tag){warmupOpen[tag]=!warmupOpen[tag];render();}
 function setSearch(q){searchQ=q;render();}
 function setSearchFilt(f){searchFilt=f;render();}
 function moveCal(dir){calMonth+=dir;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}render();}
